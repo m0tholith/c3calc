@@ -16,8 +16,9 @@ fn int main(String[] args)
     Expression exp = &bin;
 
     Literal nine = {"9"};
-    Expression expNine = &nine;
-    Binary bin2 = Binary {expNine, "*", exp};
+    Unary negNine = {"-", &nine};
+    Expression expNegNine = &negNine;
+    Binary bin2 = Binary {expNegNine, "*", exp};
     Expression exp2 = &bin2;
 
 
