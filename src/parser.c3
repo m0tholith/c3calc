@@ -4,14 +4,14 @@ import std::io;
 
 interface Expression
 {
-    fn String print();
+    fn String toString();
 }
 
 struct Literal (Expression)
 {
     String value;
 }
-fn String Literal.print(Literal* self) @dynamic
+fn String Literal.toString(Literal* self) @dynamic
 {
     return self.value;
 }
@@ -22,13 +22,13 @@ struct Binary (Expression)
     String operator;
     Expression right;
 }
-fn String Binary.print(Binary* self) @dynamic
+fn String Binary.toString(Binary* self) @dynamic
 {
     return
         "(".tconcat(
-        self.left.print().tconcat(
+        self.left.toString().tconcat(
         " ".tconcat(
-        self.right.print().tconcat(
+        self.right.toString().tconcat(
         " ".tconcat(
         self.operator.tconcat(
         ")"

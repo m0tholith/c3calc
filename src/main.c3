@@ -21,7 +21,7 @@ fn int main(String[] args)
     Expression exp2 = &bin2;
 
 
-    io::printfn("%s", exp2.print());
+    io::printfn("%s", exp2.toString());
 
     tokens.free();
 	return 0;
