@@ -4,24 +4,35 @@ import tokenizer;
 import parser;
 import std::io;
 
+const String ZERO  = "0";
+const String ONE   = "1";
+const String TWO   = "2";
+const String THREE = "3";
+const String FOUR  = "4";
+const String FIVE  = "5";
+const String SIX   = "6";
+const String SEVEN = "7";
+const String EIGHT = "8";
+const String NINE  = "9";
+
 fn int main(String[] args)
 {
     TokenList tokens = tokenizer::tokenize(args[1]);
 
-    Literal five = {"5"};
-    Expression expFive = &five;
-    Literal two = {"2"};
-    Expression expTwo = &two;
-    Binary bin = Binary {expFive, "+", expTwo};
-    Expression exp = &bin;
+    Primary seven = { &SEVEN };
 
-    Literal nine = {"9"};
-    Unary negNine = {"-", &nine};
-    Expression expNegNine = &negNine;
-    Binary bin2 = Binary {expNegNine, "*", exp};
-    Expression exp2 = &bin2;
+    Grouping group1 = { &seven };
+    Grouping group2 = { &group1 };
 
-    io::printfn("%s", exp2.toString());
+    Primary idk = { &group1 };
+
+    Unary idk2 = { UnaryOperator.PLUS, idk };
+    Unary idk3 = { UnaryOperator.MINUS, idk };
+
+    FactorRHS[] rhs = { { FactorOperator.DIV, idk2 } };
+    Factor factor = { idk3, rhs };
+
+    io::printn(factor.toString());
 
     tokens.free();
 	return 0;

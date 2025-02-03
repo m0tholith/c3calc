@@ -2,53 +2,105 @@ module parser;
 
 import std::io;
 
-interface Expression
+interface ParsingExpression
 {
     fn String toString();
 }
 
-struct Literal (Expression)
+struct Primary (ParsingExpression)
 {
-    String value;
+    any number; // either string pointer (String*) containing number, or Grouping pointer
 }
-fn String Literal.toString(Literal* self) @dynamic
+fn String Primary.toString(Primary* self) @dynamic
 {
-    return self.value;
+    switch (self.number.type)
+    {
+        case String.typeid:
+            return *(String*)self.number;
+        case Grouping.typeid:
+            return ((Grouping*)self.number).toString();
+        default:
+            io::printfn("Tried to convert primary to string, but type (%i) invalid", self.number.type);
+            return "";
+    }
 }
 
-struct Unary (Expression)
+enum UnaryOperator
 {
-    String operator;
-    Expression value;
+    NONE,
+    PLUS,
+    MINUS,
+}
+struct Unary (ParsingExpression)
+{
+    UnaryOperator operator;
+    Primary primary;
 }
 fn String Unary.toString(Unary* self) @dynamic
 {
-    return
-        "(".tconcat(
-        self.value.toString().tconcat(
-        " ".tconcat(
-        self.operator.tconcat(
-        ")"
-        ))))
-        ;
+    String result = "(";
+    result = result.tconcat(self.primary.toString());
+    switch (self.operator)
+    {
+        case PLUS:
+            result = result.tconcat(" +");
+        case MINUS:
+            result = result.tconcat(" -");
+
+        case NONE:
+        default:
+            break;
+    }
+    result = result.tconcat(")");
+
+    return result;
 }
 
-struct Binary (Expression)
+enum FactorOperator
 {
-    Expression left;
-    String operator;
-    Expression right;
+    MULT,
+    DIV,
 }
-fn String Binary.toString(Binary* self) @dynamic
+struct FactorRHS
 {
-    return
-        "(".tconcat(
-        self.left.toString().tconcat(
-        " ".tconcat(
-        self.right.toString().tconcat(
-        " ".tconcat(
-        self.operator.tconcat(
-        ")"
-        ))))))
-        ;
+    FactorOperator operator;
+    Unary right;
+}
+struct Factor (ParsingExpression)
+{
+    Unary left;
+    FactorRHS[] right;
+}
+fn String Factor.toString(Factor* self) @dynamic
+{
+    String result = "(";
+    result = result.tconcat(self.left.toString());
+    result = result.tconcat(" ");
+
+    foreach (idx, rhs : self.right)
+    {
+        result = result.tconcat(rhs.right.toString());
+        switch (rhs.operator)
+        {
+            case MULT:
+                result = result.tconcat(" *");
+            case DIV:
+                result = result.tconcat(" /");
+        }
+    }
+    result = result.tconcat(")");
+
+    return result;
+}
+
+struct Grouping (ParsingExpression)
+{
+    ParsingExpression expression;
+}
+fn String Grouping.toString(Grouping* self) @dynamic
+{
+    String result = "(";
+    result = result.tconcat(self.expression.toString());
+    result = result.tconcat(")");
+    return result;
 }
