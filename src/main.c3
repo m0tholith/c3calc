@@ -21,7 +21,6 @@ fn int main(String[] args)
     Binary bin2 = Binary {expNegNine, "*", exp};
     Expression exp2 = &bin2;
 
-
     io::printfn("%s", exp2.toString());
 
     tokens.free();
