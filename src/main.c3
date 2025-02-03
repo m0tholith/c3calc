@@ -1,10 +1,10 @@
 module calculator;
 
-import token;
+import tokenizer;
 
 fn int main(String[] args)
 {
-    TokenList tokens = token::tokenize(args[1]);
+    TokenList tokens = tokenizer::tokenize(args[1]);
 
     tokens.free();
 	return 0;

@@ -1,4 +1,4 @@
-module token;
+module tokenizer;
 
 import std::io;
 import std::collections;
