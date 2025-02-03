@@ -24,5 +24,14 @@ struct Binary (Expression)
 }
 fn String Binary.print(Binary* self) @dynamic
 {
-    return "(".tconcat(self.operator.tconcat(" ".tconcat(self.left.print().tconcat(" ".tconcat(self.right.print().tconcat(")"))))));
+    return
+        "(".tconcat(
+        self.left.print().tconcat(
+        " ".tconcat(
+        self.right.print().tconcat(
+        " ".tconcat(
+        self.operator.tconcat(
+        ")"
+        ))))))
+        ;
 }
