@@ -12,12 +12,12 @@ fn int main(String[] args)
     Expression expFive = &five;
     Literal two = {"2"};
     Expression expTwo = &two;
-    Binary bin = Binary {*&expFive, "+", *&expTwo};
+    Binary bin = Binary {expFive, "+", expTwo};
     Expression exp = &bin;
 
     Literal nine = {"9"};
     Expression expNine = &nine;
-    Binary bin2 = Binary {*&expNine, "*", *&exp};
+    Binary bin2 = Binary {expNine, "*", exp};
     Expression exp2 = &bin2;
 
 
