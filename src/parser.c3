@@ -16,6 +16,23 @@ fn String Literal.toString(Literal* self) @dynamic
     return self.value;
 }
 
+struct Unary (Expression)
+{
+    String operator;
+    Expression value;
+}
+fn String Unary.toString(Unary* self) @dynamic
+{
+    return
+        "(".tconcat(
+        self.value.toString().tconcat(
+        " ".tconcat(
+        self.operator.tconcat(
+        ")"
+        ))))
+        ;
+}
+
 struct Binary (Expression)
 {
     Expression left;
