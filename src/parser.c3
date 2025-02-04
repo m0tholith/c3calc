@@ -103,7 +103,7 @@ enum UnaryOperator
 struct Unary (ParsingExpression)
 {
     UnaryOperator operator;
-    Primary primary;
+    Primary* primary;
 }
 fn String Unary.toString(Unary* self) @dynamic
 {
@@ -123,6 +123,30 @@ fn String Unary.toString(Unary* self) @dynamic
     result = result.tconcat(")");
 
     return result;
+}
+fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
+{
+    if (try op = consume(tokens, currentPtr, TokenType.from_ordinal(TokenType.PLUS.ordinal | TokenType.MINUS.ordinal)))
+    {
+        Unary* unary = malloc(Unary.sizeof);
+        switch (op.type)
+        {
+            case PLUS:
+                unary.operator = UnaryOperator.PLUS;
+            case MINUS:
+                unary.operator = UnaryOperator.MINUS;
+            default:
+                return ParsingError.INVALID?;
+        }
+        Primary*! primary = parsePrimary(tokens, currentPtr);
+        if (catch excuse = primary)
+        {
+            return ParsingError.INVALID?;
+        }
+        unary.primary = primary;
+        return unary;
+    }
+    return ParsingError.INVALID?;
 }
 
 enum TermOperator
@@ -199,11 +223,11 @@ enum FactorOperator
 struct FactorRHS
 {
     FactorOperator operator;
-    Unary right;
+    Unary* right;
 }
 struct Factor (ParsingExpression)
 {
-    Unary left;
+    Unary* left;
     FactorRHS[] right;
 }
 fn String Factor.toString(Factor* self) @dynamic
@@ -234,22 +258,26 @@ fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
     {
         factor.left = unaryL;
         int count;
-        while (try op = consume(tokens, currentPtr, TokenType.PLUS.ordinal | TokenType.MINUS.ordinal))
+        while (try op = consume(tokens, currentPtr, TokenType.from_ordinal(TokenType.STAR.ordinal | TokenType.SLASH.ordinal)))
         {
             switch (op.type)
             {
-                case PLUS:
-                    factor.right[count].operator = FactorOperator.ADD;
-                case MINUS:
-                    factor.right[count].operator = FactorOperator.SUB;
+                case STAR:
+                    factor.right[count].operator = FactorOperator.MUL;
+                case SLASH:
+                    factor.right[count].operator = FactorOperator.DIV;
+                default:
+                    return ParsingError.INVALID?;
             }
-            Unary*! unary = parseUnary(tokens, currentPtr);
-            if (catch excuse = unary)
+            if (try unary = parseUnary(tokens, currentPtr))
             {
-                return ParsingError.INVALID;
+                factor.right[count].right = unary;
+                count++;
             }
-            factor.right[count] = unary;
-            count++;
+            else
+            {
+                return ParsingError.INVALID?;
+            }
         }
     }
     return factor;
