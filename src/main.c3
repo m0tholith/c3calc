@@ -15,24 +15,30 @@ const String SEVEN = "7";
 const String EIGHT = "8";
 const String NINE  = "9";
 
+const Primary PRIM_ZERO   = { &ZERO  };
+const Primary PRIM_ONE    = { &ONE   };
+const Primary PRIM_TWO    = { &TWO   };
+const Primary PRIM_THREE  = { &THREE };
+const Primary PRIM_FOUR   = { &FOUR  };
+const Primary PRIM_FIVE   = { &FIVE  };
+const Primary PRIM_SIX    = { &SIX   };
+const Primary PRIM_SEVEN  = { &SEVEN };
+const Primary PRIM_EIGHT  = { &EIGHT };
+const Primary PRIM_NINE   = { &NINE  };
+
 fn int main(String[] args)
 {
     TokenList tokens = tokenizer::tokenize(args[1]);
 
-    Primary seven = { &SEVEN };
+    Unary negSix   = { MINUS, PRIM_SIX   };
+    Unary posThree = { PLUS,  PRIM_THREE };
+    Unary negSeven = { MINUS, PRIM_SEVEN };
+    Unary posNine  = { PLUS,  PRIM_NINE  };
 
-    Grouping group1 = { &seven };
-    Grouping group2 = { &group1 };
+    Factor negSixTimesPosThree = { negSix, { { MULT, posThree } } };
 
-    Primary idk = { &group1 };
-
-    Unary idk2 = { UnaryOperator.PLUS, idk };
-    Unary idk3 = { UnaryOperator.MINUS, idk };
-
-    FactorRHS[] rhs = { { FactorOperator.DIV, idk2 } };
-    Factor factor = { idk3, rhs };
-
-    io::printn(factor.toString());
+    Term negSevenPlusNegSixTimesPosThree = { { negSeven, { } }, { { ADD, negSixTimesPosThree } } };
+    io::printn(negSevenPlusNegSixTimesPosThree.toString());
 
     tokens.free();
 	return 0;
