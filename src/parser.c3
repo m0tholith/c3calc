@@ -56,6 +56,43 @@ fn String Unary.toString(Unary* self) @dynamic
     return result;
 }
 
+enum TermOperator
+{
+    ADD,
+    SUB,
+}
+struct TermRHS
+{
+    TermOperator operator;
+    Factor right;
+}
+struct Term (ParsingExpression)
+{
+    Factor left;
+    TermRHS[] right;
+}
+fn String Term.toString(Term* self) @dynamic
+{
+    String result = "(";
+    result = result.tconcat(self.left.toString());
+    result = result.tconcat(" ");
+
+    foreach (idx, rhs : self.right)
+    {
+        result = result.tconcat(rhs.right.toString());
+        switch (rhs.operator)
+        {
+            case ADD:
+                result = result.tconcat(" +");
+            case SUB:
+                result = result.tconcat(" -");
+        }
+    }
+    result = result.tconcat(")");
+
+    return result;
+}
+
 enum FactorOperator
 {
     MULT,
