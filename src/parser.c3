@@ -150,13 +150,13 @@ fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
     {
         return ParsingError.INVALID?;
     }
-    Primary*! primary = parsePrimary(tokens, currentPtr);
-    if (catch excuse = primary)
+    Primary*! p = parsePrimary(tokens, currentPtr);
+    if (catch excuse = p)
     {
         return ParsingError.INVALID?;
     }
-    io::printn("unary primary");
-    unary.primary = primary;
+    unary.primary = p;
+    io::printfn("unary primary '%s' (%s)", unary.primary.toString(), unary.toString());
     return unary;
 }
 
@@ -202,13 +202,14 @@ fn Term*! parseTerm(TokenList tokens, int* currentPtr)
     term.right.new_init();
     if (try factorL = parseFactor(tokens, currentPtr))
     {
+        io::printn("term has factor");
         term.left = factorL;
         int count;
         while (true)
         {
             Token! op = consume(tokens, currentPtr, TokenType.PLUS);
             if (catch excuse = op) op = consume(tokens, currentPtr, TokenType.MINUS);
-            if (catch excuse = op) return ParsingError.INVALID?;
+            if (catch excuse = op) break;
 
             io::printfn("term op %d", op.type);
 
@@ -280,13 +281,14 @@ fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
     factor.right.new_init();
     if (try unaryL = parseUnary(tokens, currentPtr))
     {
+        io::printn("factor has unary");
         factor.left = unaryL;
         int count;
         while (true)
         {
             Token! op = consume(tokens, currentPtr, TokenType.STAR);
             if (catch excuse = op) op = consume(tokens, currentPtr, TokenType.SLASH);
-            if (catch excuse = op) return ParsingError.INVALID?;
+            if (catch excuse = op) break;
 
             io::printfn("factor op %d", op.type);
 
