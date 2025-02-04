@@ -15,16 +15,16 @@ const String SEVEN = "7";
 const String EIGHT = "8";
 const String NINE  = "9";
 
-const Primary PRIM_ZERO   = { &ZERO  };
-const Primary PRIM_ONE    = { &ONE   };
-const Primary PRIM_TWO    = { &TWO   };
-const Primary PRIM_THREE  = { &THREE };
-const Primary PRIM_FOUR   = { &FOUR  };
-const Primary PRIM_FIVE   = { &FIVE  };
-const Primary PRIM_SIX    = { &SIX   };
-const Primary PRIM_SEVEN  = { &SEVEN };
-const Primary PRIM_EIGHT  = { &EIGHT };
-const Primary PRIM_NINE   = { &NINE  };
+const Primary PRIM_ZERO   = { NUMBER, ZERO,  null };
+const Primary PRIM_ONE    = { NUMBER, ONE,   null };
+const Primary PRIM_TWO    = { NUMBER, TWO,   null };
+const Primary PRIM_THREE  = { NUMBER, THREE, null };
+const Primary PRIM_FOUR   = { NUMBER, FOUR,  null };
+const Primary PRIM_FIVE   = { NUMBER, FIVE,  null };
+const Primary PRIM_SIX    = { NUMBER, SIX,   null };
+const Primary PRIM_SEVEN  = { NUMBER, SEVEN, null };
+const Primary PRIM_EIGHT  = { NUMBER, EIGHT, null };
+const Primary PRIM_NINE   = { NUMBER, NINE,  null };
 
 fn int main(String[] args)
 {

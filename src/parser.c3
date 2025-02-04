@@ -57,22 +57,20 @@ interface ParsingExpression
     fn String toString();
 }
 
+enum PrimaryType
+{
+    NUMBER,
+    GROUPING,
+}
 struct Primary (ParsingExpression)
 {
-    any number; // either string pointer (String*) containing number, or Grouping pointer
+    PrimaryType type;
+    String number;      // used if type is NUMBER
+    Grouping *grouping; // used if type is GROUPING
 }
 fn String Primary.toString(Primary* self) @dynamic
 {
-    switch (self.number.type)
-    {
-        case String.typeid:
-            return *(String*)self.number;
-        case Grouping.typeid:
-            return ((Grouping*)self.number).toString();
-        default:
-            io::printfn("Tried to convert primary to string, but type (%i) invalid", self.number.type);
-            return "";
-    }
+    return self.number;
 }
 fn Primary*! parsePrimary(TokenList tokens, int* currentPtr)
 {
@@ -80,19 +78,21 @@ fn Primary*! parsePrimary(TokenList tokens, int* currentPtr)
     {
         io::printfn("primary number %s", number.content);
         Primary* primary = mem::new(Primary);
-        primary.number = &number.content;
+        primary.type = NUMBER;
+        primary.number = number.content;
         return primary;
     }
     else if (try parenToken = peek(tokens, currentPtr) && parenToken.checkType(TokenType.LEFT_PAREN))
     {
         io::printn("primary is group");
         Primary* primary = mem::new(Primary);
+        primary.type = GROUPING;
         Grouping*! grouping = parseGrouping(tokens, currentPtr);
         if (catch excuse = grouping)
         {
             return ParsingError.INVALID?;
         }
-        primary.number = grouping;
+        primary.grouping = grouping;
         return primary;
     }
     return ParsingError.INVALID?;
