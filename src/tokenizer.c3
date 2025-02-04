@@ -3,7 +3,7 @@ module tokenizer;
 import std::io;
 import std::collections;
 
-enum TokenType : short
+enum TokenType : int
 {
     // Single-character tokens.
     LEFT_PAREN, RIGHT_PAREN,

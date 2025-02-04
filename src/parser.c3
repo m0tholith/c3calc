@@ -14,13 +14,21 @@ fault ParsingError
 {
     INVALID,
 }
+fn bool Token.checkType(Token* token, TokenType type)
+{
+    if (token.type.ordinal & type.ordinal > 0)
+    {
+        return true;
+    }
+    return false;
+}
 fn Token! consume(TokenList tokens, int* current, TokenType type)
 {
     if ((*current) >= tokens.len())
     {
         return TokenWalk.OOB?;
     }
-    if (tokens[(*current)].type == type)
+    if (tokens[(*current)].checkType(type))
     {
         return tokens[(*current)++];
     }
@@ -125,11 +133,11 @@ enum TermOperator
 struct TermRHS
 {
     TermOperator operator;
-    Factor right;
+    Factor* right;
 }
 struct Term (ParsingExpression)
 {
-    Factor left;
+    Factor* left;
     TermRHS[] right;
 }
 fn String Term.toString(Term* self) @dynamic
@@ -160,7 +168,7 @@ fn Term*! parseTerm(TokenList tokens, int* currentPtr)
     {
         term.left = factorL;
         int count;
-        while (try op = consume(tokens, currentPtr, PLUS | MINUS))
+        while (try op = consume(tokens, currentPtr, TokenType.from_ordinal(TokenType.PLUS.ordinal | TokenType.MINUS.ordinal)))
         {
             switch (op.type)
             {
@@ -168,13 +176,15 @@ fn Term*! parseTerm(TokenList tokens, int* currentPtr)
                     term.right[count].operator = TermOperator.ADD;
                 case MINUS:
                     term.right[count].operator = TermOperator.SUB;
+                default:
+                    return ParsingError.INVALID?;
             }
             Factor*! factor = parseFactor(tokens, currentPtr);
             if (catch excuse = factor)
             {
-                return ParsingError.INVALID;
+                return ParsingError.INVALID?;
             }
-            term.right[count] = factor;
+            term.right[count].right = factor;
             count++;
         }
     }
@@ -217,10 +227,37 @@ fn String Factor.toString(Factor* self) @dynamic
 
     return result;
 }
+fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
+{
+    Factor* factor = malloc(Factor.sizeof);
+    if (try unaryL = parseUnary(tokens, currentPtr))
+    {
+        factor.left = unaryL;
+        int count;
+        while (try op = consume(tokens, currentPtr, TokenType.PLUS.ordinal | TokenType.MINUS.ordinal))
+        {
+            switch (op.type)
+            {
+                case PLUS:
+                    factor.right[count].operator = FactorOperator.ADD;
+                case MINUS:
+                    factor.right[count].operator = FactorOperator.SUB;
+            }
+            Unary*! unary = parseUnary(tokens, currentPtr);
+            if (catch excuse = unary)
+            {
+                return ParsingError.INVALID;
+            }
+            factor.right[count] = unary;
+            count++;
+        }
+    }
+    return factor;
+}
 
 struct Grouping (ParsingExpression)
 {
-    Term term;
+    Term* term;
 }
 fn String Grouping.toString(Grouping* self) @dynamic
 {

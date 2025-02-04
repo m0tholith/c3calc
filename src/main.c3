@@ -37,7 +37,7 @@ fn int main(String[] args)
 
     Factor negSixTimesPosThree = { negSix, { { MUL, posThree } } };
 
-    Term negSevenPlusNegSixTimesPosThree = { { negSeven, { } }, { { ADD, negSixTimesPosThree } } };
+    Term negSevenPlusNegSixTimesPosThree = { &&Factor { negSeven, { } }, { { ADD, &&(Factor)negSixTimesPosThree } } };
     io::printn(negSevenPlusNegSixTimesPosThree.toString());
 
     tokens.free();
