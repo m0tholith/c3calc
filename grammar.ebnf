@@ -4,4 +4,4 @@ primary		-> NUMBER | grouping;
 unary		-> ( "-" "+" )? primary;
 term		-> factor ( ( "+" "-" ) factor )*;
 factor		-> unary ( ( "*" "/" ) unary )*;
-grouping	-> "(" expression ")";
+grouping	-> "(" term ")";
