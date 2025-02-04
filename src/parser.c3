@@ -4,12 +4,16 @@ import tokenizer;
 import std::io;
 import std::core::mem;
 
+// helper functions for parsing
 fault TokenWalk
 {
     NOTFOUND,
     OOB,
 }
-// helper functions for parsing
+fault ParsingError
+{
+    INVALID,
+}
 fn Token! consume(TokenList tokens, int* current, TokenType type)
 {
     if ((*current) >= tokens.len())
@@ -36,7 +40,7 @@ fn Token! peek(TokenList tokens, int* current)
     {
         return TokenWalk.OOB?;
     }
-    return tokens[(usz)(*current + 1)];
+    return tokens[*current];
 }
 
 interface ParsingExpression
@@ -61,7 +65,7 @@ fn String Primary.toString(Primary* self) @dynamic
             return "";
     }
 }
-fn ParsingExpression parsePrimary(TokenList tokens, int* currentPtr)
+fn Primary*! parsePrimary(TokenList tokens, int* currentPtr)
 {
     if (try number = consume(tokens, currentPtr, NUMBER))
     {
@@ -72,7 +76,13 @@ fn ParsingExpression parsePrimary(TokenList tokens, int* currentPtr)
     else
     {
         // @todo: do this
-        return parseGrouping(tokens, currentPtr);
+        Primary* primary = malloc(Primary.sizeof);
+        Grouping*! grouping = parseGrouping(tokens, currentPtr);
+        if (catch excuse = grouping)
+        {
+            return ParsingError.INVALID?;
+        }
+        return primary;
     }
 }
 
@@ -143,6 +153,33 @@ fn String Term.toString(Term* self) @dynamic
 
     return result;
 }
+fn Term*! parseTerm(TokenList tokens, int* currentPtr)
+{
+    Term* term = malloc(Term.sizeof);
+    if (try factorL = parseFactor(tokens, currentPtr))
+    {
+        term.left = factorL;
+        int count;
+        while (try op = consume(tokens, currentPtr, PLUS | MINUS))
+        {
+            switch (op.type)
+            {
+                case PLUS:
+                    term.right[count].operator = TermOperator.ADD;
+                case MINUS:
+                    term.right[count].operator = TermOperator.SUB;
+            }
+            Factor*! factor = parseFactor(tokens, currentPtr);
+            if (catch excuse = factor)
+            {
+                return ParsingError.INVALID;
+            }
+            term.right[count] = factor;
+            count++;
+        }
+    }
+    return term;
+}
 
 enum FactorOperator
 {
@@ -183,12 +220,32 @@ fn String Factor.toString(Factor* self) @dynamic
 
 struct Grouping (ParsingExpression)
 {
-    ParsingExpression expression;
+    Term term;
 }
 fn String Grouping.toString(Grouping* self) @dynamic
 {
     String result = "(";
-    result = result.tconcat(self.expression.toString());
+    result = result.tconcat(self.term.toString());
     result = result.tconcat(")");
     return result;
+}
+fn Grouping*! parseGrouping(TokenList tokens, int* currentPtr)
+{
+    if (try left_paren = consume(tokens, currentPtr, TokenType.LEFT_PAREN))
+    {
+        if (try term = parseTerm(tokens, currentPtr) && try right_paren = consume(tokens, currentPtr, RIGHT_PAREN))
+        {
+            Grouping* grouping = malloc(Grouping.sizeof);
+            grouping.term = term;
+            return grouping;
+        }
+        else
+        {
+            return ParsingError.INVALID?;
+        }
+    }
+    else
+    {
+        return ParsingError.INVALID?;
+    }
 }
