@@ -112,19 +112,19 @@ struct Unary (ParsingExpression)
 fn String Unary.toString(Unary* self) @dynamic
 {
     String result = "(";
-    result = result.tconcat(self.primary.toString());
+    result = result.concat(self.primary.toString());
     switch (self.operator)
     {
         case PLUS:
-            result = result.tconcat(" +");
+            result = result.concat(" +");
         case MINUS:
-            result = result.tconcat(" -");
+            result = result.concat(" -");
 
         case NONE:
         default:
             break;
     }
-    result = result.tconcat(")");
+    result = result.concat(")");
 
     return result;
 }
@@ -143,7 +143,7 @@ fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
     }
     else if (try token = peek(tokens, currentPtr) && token.type == TokenType.NUMBER)
     {
-        io::printn("unary none");
+        io::printn("unary op none");
         unary.operator = UnaryOperator.NONE;
     }
     else
@@ -178,21 +178,21 @@ struct Term (ParsingExpression)
 fn String Term.toString(Term* self) @dynamic
 {
     String result = "(";
-    result = result.tconcat(self.left.toString());
-    if (self.right.len() > 0) result = result.tconcat(" ");
+    result = result.concat(self.left.toString());
+    if (self.right.len() > 0) result = result.concat(" ");
 
     foreach (idx, rhs : self.right)
     {
-        result = result.tconcat(rhs.right.toString());
+        result = result.concat(rhs.right.toString());
         switch (rhs.operator)
         {
             case ADD:
-                result = result.tconcat(" +");
+                result = result.concat(" +");
             case SUB:
-                result = result.tconcat(" -");
+                result = result.concat(" -");
         }
     }
-    result = result.tconcat(")");
+    result = result.concat(")");
 
     return result;
 }
@@ -256,21 +256,21 @@ struct Factor (ParsingExpression)
 fn String Factor.toString(Factor* self) @dynamic
 {
     String result = "(";
-    result = result.tconcat(self.left.toString());
-    if (self.right.len() > 0) result = result.tconcat(" ");
+    result = result.concat(self.left.toString());
+    if (self.right.len() > 0) result = result.concat(" ");
 
     foreach (idx, rhs : self.right)
     {
-        result = result.tconcat(rhs.right.toString());
+        result = result.concat(rhs.right.toString());
         switch (rhs.operator)
         {
             case MUL:
-                result = result.tconcat(" *");
+                result = result.concat(" *");
             case DIV:
-                result = result.tconcat(" /");
+                result = result.concat(" /");
         }
     }
-    result = result.tconcat(")");
+    result = result.concat(")");
 
     return result;
 }
@@ -323,8 +323,8 @@ struct Grouping (ParsingExpression)
 fn String Grouping.toString(Grouping* self) @dynamic
 {
     String result = "(";
-    result = result.tconcat(self.term.toString());
-    result = result.tconcat(")");
+    result = result.concat(self.term.toString());
+    result = result.concat(")");
     return result;
 }
 fn Grouping*! parseGrouping(TokenList tokens, int* currentPtr)
