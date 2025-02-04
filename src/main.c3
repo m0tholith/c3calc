@@ -43,6 +43,7 @@ fn int main(String[] args)
     int current = 0;
     if (try eval = parser::parseTerm(tokens, &current))
     {
+        io::printn("YAY!!!!!!");
         io::printn(eval.toString());
     }
     else

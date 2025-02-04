@@ -17,7 +17,7 @@ fault ParsingError
 }
 fn bool Token.checkType(Token* token, TokenType type)
 {
-    if (token.type.ordinal & type.ordinal > 0)
+    if (token.type == type)
     {
         return true;
     }
@@ -45,7 +45,7 @@ fn Token! previous(TokenList tokens, int* current)
 }
 fn Token! peek(TokenList tokens, int* current)
 {
-    if ((*current) < 0 || (*current) >= tokens.len() - 1)
+    if ((*current) < 0 || (*current) >= tokens.len())
     {
         return TokenWalk.OOB?;
     }
@@ -78,15 +78,15 @@ fn Primary*! parsePrimary(TokenList tokens, int* currentPtr)
 {
     if (try number = consume(tokens, currentPtr, TokenType.NUMBER))
     {
-        io::printfn("%s", number.content);
-        Primary* primary = malloc(Primary.sizeof);
+        io::printfn("primary number %s", number.content);
+        Primary* primary = mem::new(Primary);
         primary.number = &number.content;
         return primary;
     }
-    else
+    else if (try parenToken = peek(tokens, currentPtr) && parenToken.checkType(TokenType.LEFT_PAREN))
     {
         io::printn("primary is group");
-        Primary* primary = malloc(Primary.sizeof);
+        Primary* primary = mem::new(Primary);
         Grouping*! grouping = parseGrouping(tokens, currentPtr);
         if (catch excuse = grouping)
         {
@@ -95,9 +95,10 @@ fn Primary*! parsePrimary(TokenList tokens, int* currentPtr)
         primary.number = grouping;
         return primary;
     }
+    return ParsingError.INVALID?;
 }
 
-enum UnaryOperator
+enum UnaryOperator : int
 {
     NONE,
     PLUS,
@@ -129,38 +130,37 @@ fn String Unary.toString(Unary* self) @dynamic
 }
 fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
 {
-    Unary* unary = malloc(Unary.sizeof);
-    if (try op = consume(tokens, currentPtr, TokenType.from_ordinal(TokenType.PLUS.ordinal | TokenType.MINUS.ordinal)))
+    Unary* unary = mem::new(Unary);
+    if (try op = consume(tokens, currentPtr, TokenType.PLUS))
     {
-        switch (op.type)
-        {
-            case PLUS:
-                unary.operator = UnaryOperator.PLUS;
-            case MINUS:
-                unary.operator = UnaryOperator.MINUS;
-            default:
-                return ParsingError.INVALID?;
-        }
+        io::printn("unary plus");
+        unary.operator = UnaryOperator.PLUS;
     }
-    else if (try number = consume(tokens, currentPtr, TokenType.NUMBER))
+    else if (try op = consume(tokens, currentPtr, TokenType.MINUS))
     {
+        io::printn("unary minus");
+        unary.operator = UnaryOperator.MINUS;
+    }
+    else if (try token = peek(tokens, currentPtr) && token.type == TokenType.NUMBER)
+    {
+        io::printn("unary none");
         unary.operator = UnaryOperator.NONE;
     }
     else
     {
         return ParsingError.INVALID?;
     }
-    io::printfn("%d", unary.operator);
     Primary*! primary = parsePrimary(tokens, currentPtr);
     if (catch excuse = primary)
     {
         return ParsingError.INVALID?;
     }
+    io::printn("unary primary");
     unary.primary = primary;
     return unary;
 }
 
-enum TermOperator
+enum TermOperator : int
 {
     ADD,
     SUB,
@@ -198,14 +198,20 @@ fn String Term.toString(Term* self) @dynamic
 }
 fn Term*! parseTerm(TokenList tokens, int* currentPtr)
 {
-    Term* term = malloc(Term.sizeof);
+    Term* term = mem::new(Term);
     term.right.new_init();
     if (try factorL = parseFactor(tokens, currentPtr))
     {
         term.left = factorL;
         int count;
-        while (try op = consume(tokens, currentPtr, TokenType.from_ordinal(TokenType.PLUS.ordinal | TokenType.MINUS.ordinal)))
+        while (true)
         {
+            Token! op = consume(tokens, currentPtr, TokenType.PLUS);
+            if (catch excuse = op) op = consume(tokens, currentPtr, TokenType.MINUS);
+            if (catch excuse = op) return ParsingError.INVALID?;
+
+            io::printfn("term op %d", op.type);
+
             term.right.push(TermRHS {});
             switch (op.type)
             {
@@ -216,19 +222,23 @@ fn Term*! parseTerm(TokenList tokens, int* currentPtr)
                 default:
                     return ParsingError.INVALID?;
             }
-            Factor*! factor = parseFactor(tokens, currentPtr);
-            if (catch excuse = factor)
+            if (try factor = parseFactor(tokens, currentPtr))
             {
+                io::printn("term has factor");
+                term.right[count].right = factor;
+                count++;
+            }
+            else
+            {
+                io::printn("term DOES NOT HAVE factor");
                 return ParsingError.INVALID?;
             }
-            term.right[count].right = factor;
-            count++;
         }
     }
     return term;
 }
 
-enum FactorOperator
+enum FactorOperator : int
 {
     MUL,
     DIV,
@@ -241,13 +251,13 @@ struct FactorRHS
 struct Factor (ParsingExpression)
 {
     Unary* left;
-    FactorRHS[] right;
+    List(<FactorRHS>) right;
 }
 fn String Factor.toString(Factor* self) @dynamic
 {
     String result = "(";
     result = result.tconcat(self.left.toString());
-    if (self.right.len > 0) result = result.tconcat(" ");
+    if (self.right.len() > 0) result = result.tconcat(" ");
 
     foreach (idx, rhs : self.right)
     {
@@ -266,13 +276,21 @@ fn String Factor.toString(Factor* self) @dynamic
 }
 fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
 {
-    Factor* factor = malloc(Factor.sizeof);
+    Factor* factor = mem::new(Factor);
+    factor.right.new_init();
     if (try unaryL = parseUnary(tokens, currentPtr))
     {
         factor.left = unaryL;
         int count;
-        while (try op = consume(tokens, currentPtr, TokenType.from_ordinal(TokenType.STAR.ordinal | TokenType.SLASH.ordinal)))
+        while (true)
         {
+            Token! op = consume(tokens, currentPtr, TokenType.STAR);
+            if (catch excuse = op) op = consume(tokens, currentPtr, TokenType.SLASH);
+            if (catch excuse = op) return ParsingError.INVALID?;
+
+            io::printfn("factor op %d", op.type);
+
+            factor.right.push(FactorRHS {});
             switch (op.type)
             {
                 case STAR:
@@ -284,11 +302,13 @@ fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
             }
             if (try unary = parseUnary(tokens, currentPtr))
             {
+                io::printn("factor has unary");
                 factor.right[count].right = unary;
                 count++;
             }
             else
             {
+                io::printn("factor DOES NOT HAVE unary");
                 return ParsingError.INVALID?;
             }
         }
@@ -313,7 +333,7 @@ fn Grouping*! parseGrouping(TokenList tokens, int* currentPtr)
     {
         if (try term = parseTerm(tokens, currentPtr) && try right_paren = consume(tokens, currentPtr, RIGHT_PAREN))
         {
-            Grouping* grouping = malloc(Grouping.sizeof);
+            Grouping* grouping = mem::new(Grouping);
             grouping.term = term;
             return grouping;
         }
