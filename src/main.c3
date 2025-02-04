@@ -30,15 +30,25 @@ fn int main(String[] args)
 {
     TokenList tokens = tokenizer::tokenize(args[1]);
 
-    Unary negSix   = { MINUS, &PRIM_SIX   };
-    Unary posThree = { PLUS,  &PRIM_THREE };
-    Unary negSeven = { MINUS, &PRIM_SEVEN };
-    Unary posNine  = { PLUS,  &PRIM_NINE  };
+    // Unary negSix   = { MINUS, &PRIM_SIX   };
+    // Unary posThree = { PLUS,  &PRIM_THREE };
+    // Unary negSeven = { MINUS, &PRIM_SEVEN };
+    // Unary posNine  = { PLUS,  &PRIM_NINE  };
 
-    Factor negSixTimesPosThree = { &negSix, { { MUL, &posThree } } };
+    // Factor negSixTimesPosThree = { &negSix, { { MUL, &posThree } } };
 
-    Term negSevenPlusNegSixTimesPosThree = { &&Factor { &negSeven, { } }, { { ADD, &&(Factor)negSixTimesPosThree } } };
-    io::printn(negSevenPlusNegSixTimesPosThree.toString());
+    // Term negSevenPlusNegSixTimesPosThree = { &&Factor { &negSeven, { } }, { { ADD, &&(Factor)negSixTimesPosThree } } };
+    // io::printn(negSevenPlusNegSixTimesPosThree.toString());
+
+    int current = 0;
+    if (try eval = parser::parseTerm(tokens, &current))
+    {
+        io::printn(eval.toString());
+    }
+    else
+    {
+        io::printn("ERROR!!!!");
+    }
 
     tokens.free();
 	return 0;

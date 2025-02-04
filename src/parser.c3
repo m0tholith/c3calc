@@ -3,6 +3,7 @@ module parser;
 import tokenizer;
 import std::io;
 import std::core::mem;
+import std::collections;
 
 // helper functions for parsing
 fault TokenWalk
@@ -75,21 +76,23 @@ fn String Primary.toString(Primary* self) @dynamic
 }
 fn Primary*! parsePrimary(TokenList tokens, int* currentPtr)
 {
-    if (try number = consume(tokens, currentPtr, NUMBER))
+    if (try number = consume(tokens, currentPtr, TokenType.NUMBER))
     {
+        io::printfn("%s", number.content);
         Primary* primary = malloc(Primary.sizeof);
         primary.number = &number.content;
         return primary;
     }
     else
     {
-        // @todo: do this
+        io::printn("primary is group");
         Primary* primary = malloc(Primary.sizeof);
         Grouping*! grouping = parseGrouping(tokens, currentPtr);
         if (catch excuse = grouping)
         {
             return ParsingError.INVALID?;
         }
+        primary.number = grouping;
         return primary;
     }
 }
@@ -126,9 +129,9 @@ fn String Unary.toString(Unary* self) @dynamic
 }
 fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
 {
+    Unary* unary = malloc(Unary.sizeof);
     if (try op = consume(tokens, currentPtr, TokenType.from_ordinal(TokenType.PLUS.ordinal | TokenType.MINUS.ordinal)))
     {
-        Unary* unary = malloc(Unary.sizeof);
         switch (op.type)
         {
             case PLUS:
@@ -138,15 +141,23 @@ fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
             default:
                 return ParsingError.INVALID?;
         }
-        Primary*! primary = parsePrimary(tokens, currentPtr);
-        if (catch excuse = primary)
-        {
-            return ParsingError.INVALID?;
-        }
-        unary.primary = primary;
-        return unary;
     }
-    return ParsingError.INVALID?;
+    else if (try number = consume(tokens, currentPtr, TokenType.NUMBER))
+    {
+        unary.operator = UnaryOperator.NONE;
+    }
+    else
+    {
+        return ParsingError.INVALID?;
+    }
+    io::printfn("%d", unary.operator);
+    Primary*! primary = parsePrimary(tokens, currentPtr);
+    if (catch excuse = primary)
+    {
+        return ParsingError.INVALID?;
+    }
+    unary.primary = primary;
+    return unary;
 }
 
 enum TermOperator
@@ -162,13 +173,13 @@ struct TermRHS
 struct Term (ParsingExpression)
 {
     Factor* left;
-    TermRHS[] right;
+    List(<TermRHS>) right;
 }
 fn String Term.toString(Term* self) @dynamic
 {
     String result = "(";
     result = result.tconcat(self.left.toString());
-    if (self.right.len > 0) result = result.tconcat(" ");
+    if (self.right.len() > 0) result = result.tconcat(" ");
 
     foreach (idx, rhs : self.right)
     {
@@ -188,12 +199,14 @@ fn String Term.toString(Term* self) @dynamic
 fn Term*! parseTerm(TokenList tokens, int* currentPtr)
 {
     Term* term = malloc(Term.sizeof);
+    term.right.new_init();
     if (try factorL = parseFactor(tokens, currentPtr))
     {
         term.left = factorL;
         int count;
         while (try op = consume(tokens, currentPtr, TokenType.from_ordinal(TokenType.PLUS.ordinal | TokenType.MINUS.ordinal)))
         {
+            term.right.push(TermRHS {});
             switch (op.type)
             {
                 case PLUS:
