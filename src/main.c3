@@ -35,7 +35,7 @@ fn int main(String[] args)
     Unary negSeven = { MINUS, PRIM_SEVEN };
     Unary posNine  = { PLUS,  PRIM_NINE  };
 
-    Factor negSixTimesPosThree = { negSix, { { MULT, posThree } } };
+    Factor negSixTimesPosThree = { negSix, { { MUL, posThree } } };
 
     Term negSevenPlusNegSixTimesPosThree = { { negSeven, { } }, { { ADD, negSixTimesPosThree } } };
     io::printn(negSevenPlusNegSixTimesPosThree.toString());

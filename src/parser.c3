@@ -95,7 +95,7 @@ fn String Term.toString(Term* self) @dynamic
 
 enum FactorOperator
 {
-    MULT,
+    MUL,
     DIV,
 }
 struct FactorRHS
@@ -119,7 +119,7 @@ fn String Factor.toString(Factor* self) @dynamic
         result = result.tconcat(rhs.right.toString());
         switch (rhs.operator)
         {
-            case MULT:
+            case MUL:
                 result = result.tconcat(" *");
             case DIV:
                 result = result.tconcat(" /");
