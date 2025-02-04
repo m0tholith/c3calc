@@ -1,6 +1,43 @@
 module parser;
 
+import tokenizer;
 import std::io;
+import std::core::mem;
+
+fault TokenWalk
+{
+    NOTFOUND,
+    OOB,
+}
+// helper functions for parsing
+fn Token! consume(TokenList tokens, int* current, TokenType type)
+{
+    if ((*current) >= tokens.len())
+    {
+        return TokenWalk.OOB?;
+    }
+    if (tokens[(*current)].type == type)
+    {
+        return tokens[(*current)++];
+    }
+    return TokenWalk.NOTFOUND?;
+}
+fn Token! previous(TokenList tokens, int* current)
+{
+    if ((*current) == 0 || (*current) > tokens.len())
+    {
+        return TokenWalk.OOB?;
+    }
+    return tokens[(usz)(*current - 1)];
+}
+fn Token! peek(TokenList tokens, int* current)
+{
+    if ((*current) < 0 || (*current) >= tokens.len() - 1)
+    {
+        return TokenWalk.OOB?;
+    }
+    return tokens[(usz)(*current + 1)];
+}
 
 interface ParsingExpression
 {
@@ -22,6 +59,20 @@ fn String Primary.toString(Primary* self) @dynamic
         default:
             io::printfn("Tried to convert primary to string, but type (%i) invalid", self.number.type);
             return "";
+    }
+}
+fn ParsingExpression parsePrimary(TokenList tokens, int* currentPtr)
+{
+    if (try number = consume(tokens, currentPtr, NUMBER))
+    {
+        Primary* primary = malloc(Primary.sizeof);
+        primary.number = &number.content;
+        return primary;
+    }
+    else
+    {
+        // @todo: do this
+        return parseGrouping(tokens, currentPtr);
     }
 }
 
