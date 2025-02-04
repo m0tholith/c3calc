@@ -75,7 +75,7 @@ fn String Term.toString(Term* self) @dynamic
 {
     String result = "(";
     result = result.tconcat(self.left.toString());
-    result = result.tconcat(" ");
+    if (self.right.len > 0) result = result.tconcat(" ");
 
     foreach (idx, rhs : self.right)
     {
@@ -112,7 +112,7 @@ fn String Factor.toString(Factor* self) @dynamic
 {
     String result = "(";
     result = result.tconcat(self.left.toString());
-    result = result.tconcat(" ");
+    if (self.right.len > 0) result = result.tconcat(" ");
 
     foreach (idx, rhs : self.right)
     {
