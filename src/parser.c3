@@ -47,10 +47,18 @@ fn Token! peek(TokenList tokens, int* current)
 fn double strToNum(String str)
 {
     double result = 0;
-    foreach_r (idx, digit : str)
+    int power = 0;
+    foreach_r (digit : str)
     {
+        if (digit == '.') continue;
         double digitInt = (double)digit - (double)'0';
-        result += digitInt * (double)math::pow(10, (int)(str.len - idx - 1));
+        result += digitInt * (double)math::pow(10, power);
+
+        power++;
+    }
+    if (try idx = str.index_of_char('.'))
+    {
+        result /= (double)math::pow(10, (int)(str.len - idx - 1));
     }
     return result;
 }
