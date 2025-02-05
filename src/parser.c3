@@ -82,7 +82,6 @@ fn Primary*! parsePrimary(TokenList tokens, int* currentPtr)
 {
     if (try number = consume(tokens, currentPtr, TokenType.NUMBER))
     {
-        io::printfn("primary number %s", number.content);
         Primary* primary = mem::new(Primary);
         primary.number = number.content;
         return primary;
@@ -128,17 +127,14 @@ fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
     Unary* unary = mem::new(Unary);
     if (try op = consume(tokens, currentPtr, TokenType.PLUS))
     {
-        io::printn("unary plus");
         unary.operator = UnaryOperator.PLUS;
     }
     else if (try op = consume(tokens, currentPtr, TokenType.MINUS))
     {
-        io::printn("unary minus");
         unary.operator = UnaryOperator.MINUS;
     }
     else if (try token = peek(tokens, currentPtr) && token.type == TokenType.NUMBER)
     {
-        io::printn("unary op none");
         unary.operator = UnaryOperator.NONE;
     }
     else
@@ -151,7 +147,6 @@ fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
         return ParsingError.INVALID?;
     }
     unary.primary = p;
-    io::printfn("unary primary '%s' (%s)", unary.primary.toString(), unary.toString());
     return unary;
 }
 fn double Unary.evaluate(Unary* self) @dynamic
@@ -183,7 +178,7 @@ struct Term (ParsingExpression)
 }
 fn String Term.toString(Term* self) @dynamic
 {
-    String result = "(";
+    String result;
     result = result.concat(self.left.toString());
 
     foreach (idx, rhs : self.right)
@@ -197,7 +192,6 @@ fn String Term.toString(Term* self) @dynamic
         }
         result = result.concat(rhs.right.toString());
     }
-    result = result.concat(")");
 
     return result;
 }
@@ -207,7 +201,6 @@ fn Term*! parseTerm(TokenList tokens, int* currentPtr)
     term.right.new_init();
     if (try factorL = parseFactor(tokens, currentPtr))
     {
-        io::printn("term has factor");
         term.left = factorL;
         int count;
         while (true)
@@ -215,8 +208,6 @@ fn Term*! parseTerm(TokenList tokens, int* currentPtr)
             Token! op = consume(tokens, currentPtr, TokenType.PLUS);
             if (catch excuse = op) op = consume(tokens, currentPtr, TokenType.MINUS);
             if (catch excuse = op) break;
-
-            io::printfn("term op %d", op.type);
 
             term.right.push(TermRHS {});
             switch (op.type)
@@ -230,13 +221,11 @@ fn Term*! parseTerm(TokenList tokens, int* currentPtr)
             }
             if (try factor = parseFactor(tokens, currentPtr))
             {
-                io::printn("term has factor");
                 term.right[count].right = factor;
                 count++;
             }
             else
             {
-                io::printn("term DOES NOT HAVE factor");
                 return ParsingError.INVALID?;
             }
         }
@@ -283,7 +272,7 @@ fn String Factor.toString(Factor* self) @dynamic
     {
         return self.left.toString();
     }
-    String result = "(";
+    String result;
     result = result.concat(self.left.toString());
 
     foreach (idx, rhs : self.right)
@@ -297,7 +286,6 @@ fn String Factor.toString(Factor* self) @dynamic
         }
         result = result.concat(rhs.right.toString());
     }
-    result = result.concat(")");
 
     return result;
 }
@@ -307,7 +295,6 @@ fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
     factor.right.new_init();
     if (try unaryL = parseUnary(tokens, currentPtr))
     {
-        io::printn("factor has unary");
         factor.left = unaryL;
         int count;
         while (true)
@@ -315,8 +302,6 @@ fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
             Token! op = consume(tokens, currentPtr, TokenType.STAR);
             if (catch excuse = op) op = consume(tokens, currentPtr, TokenType.SLASH);
             if (catch excuse = op) break;
-
-            io::printfn("factor op %d", op.type);
 
             factor.right.push(FactorRHS {});
             switch (op.type)
@@ -330,13 +315,11 @@ fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
             }
             if (try unary = parseUnary(tokens, currentPtr))
             {
-                io::printn("factor has unary");
                 factor.right[count].right = unary;
                 count++;
             }
             else
             {
-                io::printn("factor DOES NOT HAVE unary");
                 return ParsingError.INVALID?;
             }
         }
