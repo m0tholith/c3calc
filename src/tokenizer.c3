@@ -3,7 +3,7 @@ module tokenizer;
 import std::io;
 import std::collections;
 
-enum TokenType : int (int value)
+enum TokenType : (inline int value)
 {
     LEFT_PAREN = 1 << 0,
     RIGHT_PAREN = 1 << 1,
