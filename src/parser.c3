@@ -18,7 +18,7 @@ fault ParsingError
 }
 fn bool Token.checkType(Token* token, TokenType type)
 {
-    if (token.type == type)
+    if (token.type.value & type.value > 0)
     {
         return true;
     }

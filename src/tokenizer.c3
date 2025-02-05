@@ -3,16 +3,20 @@ module tokenizer;
 import std::io;
 import std::collections;
 
-enum TokenType : int
+enum TokenType : int (int value)
 {
-    // Single-character tokens.
-    LEFT_PAREN, RIGHT_PAREN,
-    COMMA, DOT, MINUS, PLUS, SLASH, STAR, CARET,
+    LEFT_PAREN = 1 << 0,
+    RIGHT_PAREN = 1 << 1,
+    COMMA = 1 << 2,
+    DOT = 1 << 3,
+    MINUS = 1 << 4,
+    PLUS = 1 << 5,
+    SLASH = 1 << 6,
+    STAR = 1 << 7,
+    CARET = 1 << 8,
 
     // Literals.
-    NUMBER,
-
-    EOF
+    NUMBER = 1 << 9,
 }
 
 struct Token
