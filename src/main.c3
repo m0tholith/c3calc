@@ -31,12 +31,11 @@ fn int main(String[] args)
     TokenList tokens = tokenizer::tokenize(args[1]);
     io::printn(tokens.toString());
 
-    int current = 0;
-    if (try eval = parser::parseTerm(tokens, &current))
+    if (try expression = parser::parseExpression(tokens))
     {
-        io::printn(eval.toString());
-        double evalnum = eval.evaluate();
-        io::printfn("is equal to '%f'", evalnum);
+        io::printn(expression.toString());
+        double expressionValue = expression.evaluate();
+        io::printfn("is equal to '%f'", expressionValue);
     }
     else
     {

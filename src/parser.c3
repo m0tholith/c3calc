@@ -70,6 +70,32 @@ interface ParsingExpression
 }
 
 
+struct Expression (ParsingExpression)
+{
+    Term* term;
+}
+fn Expression*! parseExpression(TokenList tokens)
+{
+    Expression* result = malloc(Expression.sizeof);
+
+    int* current = malloc(int.sizeof);
+    Term*! term = parseTerm(tokens, current);
+    free(current);
+
+    if (catch excuse = term) return ParsingError.INVALID?;
+
+    result.term = term;
+    return result;
+}
+fn String Expression.toString(Expression* self) @dynamic
+{
+    return self.term.toString();
+}
+fn double Expression.evaluate(Expression* self) @dynamic
+{
+    return self.term.evaluate();
+}
+
 struct Primary (ParsingExpression)
 {
     String number;
