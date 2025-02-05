@@ -1,6 +1,6 @@
 expression	-> term;
 
-primary		-> NUMBER | grouping;
+primary		-> NUMBER;
 unary		-> ( "-" "+" )? primary;
 term		-> factor ( ( "+" "-" ) factor )*;
 factor		-> unary ( ( "*" "/" ) unary )*;
