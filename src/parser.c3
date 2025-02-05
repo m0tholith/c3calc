@@ -52,22 +52,22 @@ fn Token! peek(TokenList tokens, int* current)
     }
     return tokens[*current];
 }
-fn int strToNum(String str)
+fn double strToNum(String str)
 {
     double result = 0;
     foreach_r (idx, digit : str)
     {
-        int digitInt = digit - '0';
+        double digitInt = (double)digit - (double)'0';
         io::printfn("digit %d", idx);
-        result += digitInt * math::pow(10, (int)(str.len - idx - 1));
+        result += digitInt * (double)math::pow(10, (int)(str.len - idx - 1));
     }
-    return (int)result;
+    return result;
 }
 
 interface ParsingExpression
 {
     fn String toString();
-    fn int evaluate();
+    fn double evaluate();
 }
 
 
@@ -90,7 +90,7 @@ fn Primary*! parsePrimary(TokenList tokens, int* currentPtr)
     }
     return ParsingError.INVALID?;
 }
-fn int Primary.evaluate(Primary* self) @dynamic
+fn double Primary.evaluate(Primary* self) @dynamic
 {
     return strToNum(self.number);
 }
@@ -155,7 +155,7 @@ fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
     io::printfn("unary primary '%s' (%s)", unary.primary.toString(), unary.toString());
     return unary;
 }
-fn int Unary.evaluate(Unary* self) @dynamic
+fn double Unary.evaluate(Unary* self) @dynamic
 {
     switch (self.operator)
     {
@@ -244,10 +244,10 @@ fn Term*! parseTerm(TokenList tokens, int* currentPtr)
     }
     return term;
 }
-fn int Term.evaluate(Term* self) @dynamic
+fn double Term.evaluate(Term* self) @dynamic
 {
-    int result = self.left.evaluate();
-    int factorEval;
+    double result = self.left.evaluate();
+    double factorEval;
     foreach (idx, factorRHS : self.right)
     {
         switch (factorRHS.operator)
@@ -344,21 +344,20 @@ fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
     }
     return factor;
 }
-fn int Factor.evaluate(Factor* self) @dynamic
+fn double Factor.evaluate(Factor* self) @dynamic
 {
-    int result = self.left.evaluate();
-    int unaryEval;
+    double result = self.left.evaluate();
+    double unaryEval;
     foreach (idx, unaryRHS : self.right)
     {
         unaryEval = unaryRHS.right.evaluate();
         switch (unaryRHS.operator)
         {
             case MUL:
-                break;
+                result *= unaryEval;
             case DIV:
-                unaryEval = 1 / unaryEval;
+                result /= unaryEval;
         }
-        result *= unaryEval;
     }
     return result;
 }
@@ -394,7 +393,7 @@ fn Grouping*! parseGrouping(TokenList tokens, int* currentPtr)
         return ParsingError.INVALID?;
     }
 }
-fn int Grouping.evaluate(Grouping* self) @dynamic
+fn double Grouping.evaluate(Grouping* self) @dynamic
 {
     return self.term.evaluate();
 }
