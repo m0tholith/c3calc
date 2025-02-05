@@ -58,7 +58,6 @@ fn double strToNum(String str)
     foreach_r (idx, digit : str)
     {
         double digitInt = (double)digit - (double)'0';
-        io::printfn("digit %d", idx);
         result += digitInt * (double)math::pow(10, (int)(str.len - idx - 1));
     }
     return result;
