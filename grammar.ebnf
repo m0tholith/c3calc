@@ -1,7 +1,7 @@
-expression	-> term;
+expression	= term;
 
-primary		-> NUMBER;
-unary		-> ( "-" "+" )? primary;
-term		-> factor ( ( "+" "-" ) factor )*;
-factor		-> unary ( ( "*" "/" ) unary )*;
-grouping	-> "(" term ")";
+primary		= NUMBER;
+unary		= [ "-" "+" ] primary;
+term		= factor { ( "+" "-" ) factor };
+factor		= unary { ( "*" "/" ) unary };
+grouping	= "(" term ")";
