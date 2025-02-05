@@ -3,20 +3,20 @@ module tokenizer;
 import std::io;
 import std::collections;
 
-enum TokenType : (inline int value)
+enum TokenType : (inline int value, String name)
 {
-    LEFT_PAREN = 1 << 0,
-    RIGHT_PAREN = 1 << 1,
-    COMMA = 1 << 2,
-    DOT = 1 << 3,
-    MINUS = 1 << 4,
-    PLUS = 1 << 5,
-    SLASH = 1 << 6,
-    STAR = 1 << 7,
-    CARET = 1 << 8,
+    LEFT_PAREN   = { 1 << 0, "LEFT_PAREN" },
+    RIGHT_PAREN  = { 1 << 1, "RIGHT_PAREN" },
+    COMMA        = { 1 << 2, "COMMA" },
+    DOT          = { 1 << 3, "DOT" },
+    MINUS        = { 1 << 4, "MINUS" },
+    PLUS         = { 1 << 5, "PLUS" },
+    SLASH        = { 1 << 6, "SLASH" },
+    STAR         = { 1 << 7, "STAR" },
+    CARET        = { 1 << 8, "CARET" },
 
     // Literals.
-    NUMBER = 1 << 9,
+    NUMBER       = { 1 << 9, "NUMBER" },
 }
 
 struct Token
@@ -35,6 +35,21 @@ fn bool Token.checkType(Token* token, TokenType type)
 }
 
 def TokenList = List(<Token>);
+
+fn String TokenList.toString(TokenList* tokens)
+{
+    String result = "[ ";
+    foreach (idx, &token : tokens)
+    {
+        result = result.concat("{ \"");
+        result = result.concat(token.content);
+        result = result.concat("\", ");
+        result = result.concat(token.type.name);
+        result = result.concat(" }, ");
+    }
+    result = result.concat("]\n");
+    return result;
+}
 
 fn List(<Token>) tokenize(String expression)
 {
@@ -91,27 +106,17 @@ fn List(<Token>) tokenize(String expression)
                     int numStart = position;
                     while (isDigit(current) || current == '.')
                     {
-                        io::printfn("Processing number at position %d (char '%c')", position, current);
                         position++;
                         if (position >= expression.len) break;
                         current = expression[position];
                     }
                     Token number = { expression[numStart .. position - 1], TokenType.NUMBER, numStart };
-                    io::printfn("Finished processing number %s", number.content);
                     tokens.push(number);
                     break;
                 }
-                io::printfn("Unexpected character at position %d ('%c')", position, current);
                 return tokens;
         }
     }
-
-    io::print("[ ");
-    foreach (idx, &token : tokens)
-    {
-        io::printf("{ \"%s\", %d, %d }, ", token.content, token.type, token.location);
-    }
-    io::print("]\n");
 
     return tokens;
 }
