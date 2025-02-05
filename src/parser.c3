@@ -111,20 +111,19 @@ struct Unary (ParsingExpression)
 }
 fn String Unary.toString(Unary* self) @dynamic
 {
-    String result = "(";
-    result = result.concat(self.primary.toString());
+    String result = "";
     switch (self.operator)
     {
         case PLUS:
-            result = result.concat(" +");
+            result = result.concat("+");
         case MINUS:
-            result = result.concat(" -");
+            result = result.concat("-");
 
         case NONE:
         default:
             break;
     }
-    result = result.concat(")");
+    result = result.concat(self.primary.toString());
 
     return result;
 }
@@ -179,18 +178,17 @@ fn String Term.toString(Term* self) @dynamic
 {
     String result = "(";
     result = result.concat(self.left.toString());
-    if (self.right.len() > 0) result = result.concat(" ");
 
     foreach (idx, rhs : self.right)
     {
-        result = result.concat(rhs.right.toString());
         switch (rhs.operator)
         {
             case ADD:
-                result = result.concat(" +");
+                result = result.concat(" + ");
             case SUB:
-                result = result.concat(" -");
+                result = result.concat(" - ");
         }
+        result = result.concat(rhs.right.toString());
     }
     result = result.concat(")");
 
@@ -256,20 +254,23 @@ struct Factor (ParsingExpression)
 }
 fn String Factor.toString(Factor* self) @dynamic
 {
+    if (self.right.len() == 0)
+    {
+        return self.left.toString();
+    }
     String result = "(";
     result = result.concat(self.left.toString());
-    if (self.right.len() > 0) result = result.concat(" ");
 
     foreach (idx, rhs : self.right)
     {
-        result = result.concat(rhs.right.toString());
         switch (rhs.operator)
         {
             case MUL:
-                result = result.concat(" *");
+                result = result.concat(" * ");
             case DIV:
-                result = result.concat(" /");
+                result = result.concat(" / ");
         }
+        result = result.concat(rhs.right.toString());
     }
     result = result.concat(")");
 
