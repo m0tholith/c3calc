@@ -2,6 +2,7 @@ module parser;
 
 import tokenizer;
 import std::io;
+import std::math;
 import std::core::mem;
 import std::collections;
 
@@ -51,11 +52,25 @@ fn Token! peek(TokenList tokens, int* current)
     }
     return tokens[*current];
 }
+fn int strToNum(String str)
+{
+    double result = 0;
+    foreach_r (idx, digit : str)
+    {
+        int digitInt = digit - '0';
+        io::printfn("digit %d", idx);
+        result += digitInt * math::pow(10, (int)(str.len - idx - 1));
+    }
+    return (int)result;
+}
 
 interface ParsingExpression
 {
     fn String toString();
+    fn int evaluate();
 }
+
+
 struct Primary (ParsingExpression)
 {
     String number;
@@ -74,6 +89,10 @@ fn Primary*! parsePrimary(TokenList tokens, int* currentPtr)
         return primary;
     }
     return ParsingError.INVALID?;
+}
+fn int Primary.evaluate(Primary* self) @dynamic
+{
+    return strToNum(self.number);
 }
 
 enum UnaryOperator : int
@@ -135,6 +154,17 @@ fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
     unary.primary = p;
     io::printfn("unary primary '%s' (%s)", unary.primary.toString(), unary.toString());
     return unary;
+}
+fn int Unary.evaluate(Unary* self) @dynamic
+{
+    switch (self.operator)
+    {
+        case NONE:
+        case PLUS:
+            return self.primary.evaluate();
+        case MINUS:
+            return -1 * self.primary.evaluate();
+    }
 }
 
 enum TermOperator : int
@@ -213,6 +243,24 @@ fn Term*! parseTerm(TokenList tokens, int* currentPtr)
         }
     }
     return term;
+}
+fn int Term.evaluate(Term* self) @dynamic
+{
+    int result = self.left.evaluate();
+    int factorEval;
+    foreach (idx, factorRHS : self.right)
+    {
+        switch (factorRHS.operator)
+        {
+            case ADD:
+                factorEval = +1;
+            case SUB:
+                factorEval = -1;
+        }
+        factorEval *= factorRHS.right.evaluate();
+        result += factorEval;
+    }
+    return result;
 }
 
 enum FactorOperator : int
@@ -296,6 +344,24 @@ fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
     }
     return factor;
 }
+fn int Factor.evaluate(Factor* self) @dynamic
+{
+    int result = self.left.evaluate();
+    int unaryEval;
+    foreach (idx, unaryRHS : self.right)
+    {
+        unaryEval = unaryRHS.right.evaluate();
+        switch (unaryRHS.operator)
+        {
+            case MUL:
+                break;
+            case DIV:
+                unaryEval = 1 / unaryEval;
+        }
+        result *= unaryEval;
+    }
+    return result;
+}
 
 struct Grouping (ParsingExpression)
 {
@@ -327,4 +393,8 @@ fn Grouping*! parseGrouping(TokenList tokens, int* currentPtr)
     {
         return ParsingError.INVALID?;
     }
+}
+fn int Grouping.evaluate(Grouping* self) @dynamic
+{
+    return self.term.evaluate();
 }

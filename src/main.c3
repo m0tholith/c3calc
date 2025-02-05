@@ -45,6 +45,7 @@ fn int main(String[] args)
     {
         io::printn("YAY!!!!!!");
         io::printn(eval.toString());
+        io::printfn("is equal to '%d'", eval.evaluate());
     }
     else
     {
