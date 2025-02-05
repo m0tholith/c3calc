@@ -16,14 +16,6 @@ fault ParsingError
 {
     INVALID,
 }
-fn bool Token.checkType(Token* token, TokenType type)
-{
-    if (token.type.value & type.value > 0)
-    {
-        return true;
-    }
-    return false;
-}
 fn Token! consume(TokenList tokens, int* current, TokenType type)
 {
     if ((*current) >= tokens.len())

@@ -25,6 +25,14 @@ struct Token
     TokenType type;
     int location; // index of first character in string
 }
+fn bool Token.checkType(Token* token, TokenType type)
+{
+    if (token.type.value & type.value > 0)
+    {
+        return true;
+    }
+    return false;
+}
 
 def TokenList = List(<Token>);
 
