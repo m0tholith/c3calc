@@ -108,9 +108,7 @@ fn Primary*! parsePrimary(TokenList tokens, int* currentPtr)
     Primary* primary = mem::new(Primary);
     if (try number = consume(tokens, currentPtr, TokenType.NUMBER))
     {
-        String* data = malloc(number.content.len);
-        *data = number.content.copy();
-        primary.value = any_make(data, String.typeid);
+        primary.value = @clone(number.content.copy());
         return primary;
     }
     else if (try grouping = parseGrouping(tokens, currentPtr))
@@ -137,6 +135,7 @@ fn void Primary.free(Primary* self) @dynamic
     if (self.value.ptr != null) switch (self.value.type)
     {
         case String.typeid:
+            free(((String*)self.value).ptr);
             free(self.value.ptr);
         case Grouping.typeid:
             ((Grouping*)self.value).free();
