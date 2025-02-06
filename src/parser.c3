@@ -423,14 +423,14 @@ fn void Term.free(Term* self) @dynamic
 
 struct Grouping (ParsingExpression)
 {
-    Term* term;
+    Term* expr;
 }
 fn String Grouping.toString(Grouping* self) @dynamic
 {
     DString result;
     result.new_init();
     result.append("(");
-    result.append(self.term.toString());
+    result.append(self.expr.toString());
     result.append(")");
     String str = result.tcopy_str();
     result.free();
@@ -441,18 +441,18 @@ fn Grouping*! parseGrouping(TokenList tokens, int* currentPtr)
     if (try left_paren = consume(tokens, currentPtr, LEFT_PAREN) && try term = parseTerm(tokens, currentPtr) && try right_paren = consume(tokens, currentPtr, RIGHT_PAREN))
     {
         Grouping* grouping = mem::new(Grouping);
-        grouping.term = term;
+        grouping.expr = term;
         return grouping;
     }
     return ParsingError.INVALID?;
 }
 fn double Grouping.evaluate(Grouping* self) @dynamic
 {
-    return self.term.evaluate();
+    return self.expr.evaluate();
 }
 fn void Grouping.free(Grouping* self) @dynamic
 {
     if (self == null) return;
-    self.term.free();
+    self.expr.free();
     mem::free(self);
 }
