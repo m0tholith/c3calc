@@ -55,33 +55,33 @@ interface ParsingExpression
 
 struct Expression (ParsingExpression)
 {
-    Term* term;
+    Term* expr;
 }
 fn Expression*! parseExpression(TokenList tokens)
 {
     Expression* result = malloc(Expression.sizeof);
 
     int* current = mem::new(int);
-    Term*! term = parseTerm(tokens, current);
+    Term*! expr = parseTerm(tokens, current);
     free(current);
 
-    if (catch excuse = term) return ParsingError.INVALID?;
+    if (catch excuse = expr) return ParsingError.INVALID?;
 
-    result.term = term;
+    result.expr = expr;
     return result;
 }
 fn String Expression.toString(Expression* self) @dynamic
 {
-    return self.term.toString();
+    return self.expr.toString();
 }
 fn double Expression.evaluate(Expression* self) @dynamic
 {
-    return self.term.evaluate();
+    return self.expr.evaluate();
 }
 fn void Expression.free(Expression* self) @dynamic
 {
     if (self == null) return;
-    self.term.free();
+    self.expr.free();
     free(self);
 }
 
