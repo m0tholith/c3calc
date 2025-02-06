@@ -98,25 +98,49 @@ fn double Expression.evaluate(Expression* self) @dynamic
 
 struct Primary (ParsingExpression)
 {
-    String number;
+    // two options:
+    //  - String* number
+    //  - Grouping* grouping
+    any value;
 }
 fn String Primary.toString(Primary* self) @dynamic
 {
-    return self.number;
+    switch (self.value.type)
+    {
+        case String.typeid:
+            return *(String*)self.value;
+        case Grouping.typeid:
+            return ((Grouping*)self.value).toString();
+    }
+    return "(ERROR!)";
 }
 fn Primary*! parsePrimary(TokenList tokens, int* currentPtr)
 {
+    Primary* primary = mem::new(Primary);
     if (try number = consume(tokens, currentPtr, TokenType.NUMBER))
     {
-        Primary* primary = mem::new(Primary);
-        primary.number = number.content;
+        String* data = malloc(number.content.len);
+        *data = number.content.copy();
+        primary.value = any_make(data, String.typeid);
+        return primary;
+    }
+    else if (try grouping = parseGrouping(tokens, currentPtr))
+    {
+        primary.value = grouping;
         return primary;
     }
     return ParsingError.INVALID?;
 }
 fn double Primary.evaluate(Primary* self) @dynamic
 {
-    return strToNum(self.number);
+    switch (self.value.type)
+    {
+        case String.typeid:
+            return strToNum(*(String*)self.value);
+        case Grouping.typeid:
+            return ((Grouping*)self.value).evaluate();
+    }
+    return 999.99999;
 }
 
 enum UnaryOperator : int
@@ -158,14 +182,6 @@ fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
     else if (try op = consume(tokens, currentPtr, TokenType.MINUS))
     {
         unary.operator = UnaryOperator.MINUS;
-    }
-    else if (try token = peek(tokens, currentPtr) && token.type == TokenType.NUMBER)
-    {
-        unary.operator = UnaryOperator.NONE;
-    }
-    else
-    {
-        return ParsingError.INVALID?;
     }
     Primary*! p = parsePrimary(tokens, currentPtr);
     if (catch excuse = p)
@@ -255,8 +271,10 @@ fn Term*! parseTerm(TokenList tokens, int* currentPtr)
                 return ParsingError.INVALID?;
             }
         }
+        return term;
     }
-    return term;
+    free(term);
+    return ParsingError.INVALID?;
 }
 fn double Term.evaluate(Term* self) @dynamic
 {
@@ -383,23 +401,13 @@ fn String Grouping.toString(Grouping* self) @dynamic
 }
 fn Grouping*! parseGrouping(TokenList tokens, int* currentPtr)
 {
-    if (try left_paren = consume(tokens, currentPtr, TokenType.LEFT_PAREN))
+    if (try left_paren = consume(tokens, currentPtr, LEFT_PAREN) && try term = parseTerm(tokens, currentPtr) && try right_paren = consume(tokens, currentPtr, RIGHT_PAREN))
     {
-        if (try term = parseTerm(tokens, currentPtr) && try right_paren = consume(tokens, currentPtr, RIGHT_PAREN))
-        {
-            Grouping* grouping = mem::new(Grouping);
-            grouping.term = term;
-            return grouping;
-        }
-        else
-        {
-            return ParsingError.INVALID?;
-        }
+        Grouping* grouping = mem::new(Grouping);
+        grouping.term = term;
+        return grouping;
     }
-    else
-    {
-        return ParsingError.INVALID?;
-    }
+    return ParsingError.INVALID?;
 }
 fn double Grouping.evaluate(Grouping* self) @dynamic
 {

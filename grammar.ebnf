@@ -1,6 +1,6 @@
 expression	= term;
 
-primary		= NUMBER;
+primary		= NUMBER | grouping;
 unary		= [ "-" "+" ] primary;
 term		= factor { ( "+" "-" ) factor };
 factor		= unary { ( "*" "/" ) unary };
