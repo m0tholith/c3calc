@@ -146,7 +146,6 @@ fn void Primary.free(Primary* self) @dynamic
 enum UnaryOperator : int
 {
     NONE,
-    PLUS,
     MINUS,
 }
 struct Unary (ParsingExpression)
@@ -160,8 +159,6 @@ fn String Unary.toString(Unary* self) @dynamic
     result.new_init();
     switch (self.operator)
     {
-        case PLUS:
-            result.append("+");
         case MINUS:
             result.append("-");
 
@@ -178,11 +175,7 @@ fn String Unary.toString(Unary* self) @dynamic
 fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
 {
     Unary* unary = mem::new(Unary);
-    if (try op = consume(tokens, currentPtr, TokenType.PLUS))
-    {
-        unary.operator = UnaryOperator.PLUS;
-    }
-    else if (try op = consume(tokens, currentPtr, TokenType.MINUS))
+    if (try op = consume(tokens, currentPtr, TokenType.MINUS))
     {
         unary.operator = UnaryOperator.MINUS;
     }
@@ -199,7 +192,6 @@ fn double Unary.evaluate(Unary* self) @dynamic
     switch (self.operator)
     {
         case NONE:
-        case PLUS:
             return self.primary.evaluate();
         case MINUS:
             return -1 * self.primary.evaluate();
