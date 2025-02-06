@@ -61,7 +61,7 @@ fn Expression*! parseExpression(TokenList tokens)
 {
     Expression* result = malloc(Expression.sizeof);
 
-    int* current = malloc(int.sizeof);
+    int* current = mem::new(int);
     Term*! term = parseTerm(tokens, current);
     free(current);
 
@@ -444,5 +444,6 @@ fn double Grouping.evaluate(Grouping* self) @dynamic
 fn void Grouping.free(Grouping* self) @dynamic
 {
     if (self == null) return;
-    free(self.term);
+    self.term.free();
+    mem::free(self);
 }
