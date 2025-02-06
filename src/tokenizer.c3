@@ -33,6 +33,17 @@ fn bool Token.checkType(Token* token, TokenType type)
     }
     return false;
 }
+fn String Token.toString(Token* token)
+{
+    String result = "{ \"";
+
+    result = result.concat(token.content);
+    result = result.concat("\", ");
+    result = result.concat(token.type.name);
+    result = result.concat(" }");
+
+    return result;
+}
 
 def TokenList = List(<Token>);
 
@@ -41,11 +52,8 @@ fn String TokenList.toString(TokenList* tokens)
     String result = "[ ";
     foreach (idx, &token : tokens)
     {
-        result = result.concat("{ \"");
-        result = result.concat(token.content);
-        result = result.concat("\", ");
-        result = result.concat(token.type.name);
-        result = result.concat(" }, ");
+        result = result.concat(token.toString());
+        result = result.concat(",");
     }
     result = result.concat("]\n");
     return result;
