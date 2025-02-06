@@ -143,6 +143,62 @@ fn void Primary.free(Primary* self) @dynamic
     mem::free(self);
 }
 
+struct Exponent (ParsingExpression)
+{
+	List(<Primary*>) primaryList;
+}
+fn String Exponent.toString(Exponent* self) @dynamic
+{
+	if (self.primaryList.len() == 1) return self.primaryList[0].toString();
+
+	DString result;
+	result.new_init();
+	result.append(self.primaryList[0].toString());
+
+	for (int i = 1; i < self.primaryList.len(); i++)
+	{
+		result.appendf(" ^ %s", self.primaryList[i].toString());
+	}
+
+	String str = result.tcopy_str();
+	result.free();
+	return str;
+}
+fn Exponent*! parseExponent(TokenList tokens, int* currentPtr)
+{
+	Exponent* exponent = mem::new(Exponent);
+	exponent.primaryList.new_init();
+	while (try primary = parsePrimary(tokens, currentPtr))
+	{
+		exponent.primaryList.push(primary);
+		if (catch nonExponent = consume(tokens, currentPtr, CARET))
+		{
+			break;
+		}
+	}
+	return exponent;
+}
+fn double Exponent.evaluate(Exponent* self) @dynamic
+{
+	if (self.primaryList.len() == 0) return 999.99999;
+
+	double result = self.primaryList[^1].evaluate();
+	for (int i = (int)self.primaryList.len() - 1 - 1; i >= 0; i--)
+	{
+		result = math::pow(self.primaryList[i].evaluate(), result);
+	}
+	return result;
+}
+fn void Exponent.free(Exponent* self) @dynamic
+{
+	foreach (primary : self.primaryList)
+	{
+		primary.free();
+	}
+	self.primaryList.free();
+	mem::free(self);
+}
+
 enum UnaryOperator : int
 {
     NONE,
@@ -151,7 +207,7 @@ enum UnaryOperator : int
 struct Unary (ParsingExpression)
 {
     UnaryOperator operator;
-    Primary* primary;
+    Exponent* exponent;
 }
 fn String Unary.toString(Unary* self) @dynamic
 {
@@ -166,7 +222,7 @@ fn String Unary.toString(Unary* self) @dynamic
         default:
             break;
     }
-    result.append(self.primary.toString());
+    result.append(self.exponent.toString());
     String str = result.tcopy_str();
     result.free();
 
@@ -179,12 +235,12 @@ fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
     {
         unary.operator = UnaryOperator.MINUS;
     }
-    Primary*! p = parsePrimary(tokens, currentPtr);
+    Exponent*! p = parseExponent(tokens, currentPtr);
     if (catch excuse = p)
     {
         return ParsingError.INVALID?;
     }
-    unary.primary = p;
+    unary.exponent = p;
     return unary;
 }
 fn double Unary.evaluate(Unary* self) @dynamic
@@ -192,15 +248,15 @@ fn double Unary.evaluate(Unary* self) @dynamic
     switch (self.operator)
     {
         case NONE:
-            return self.primary.evaluate();
+            return self.exponent.evaluate();
         case MINUS:
-            return -1 * self.primary.evaluate();
+            return -1 * self.exponent.evaluate();
     }
 }
 fn void Unary.free(Unary* self) @dynamic
 {
     if (self == null) return;
-    self.primary.free();
+    self.exponent.free();
     mem::free(self);
 }
 

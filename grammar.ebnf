@@ -4,7 +4,8 @@
 <expression>	::= <term>
 
 <primary>		::= <number> | <grouping>
-<unary>			::= [ "-" ] <primary>
+<exponent>		::= <primary> { "^" <primary> }
+<unary>			::= [ "-" ] <exponent>
 <factor>		::= <unary> { ( "*" | "/" ) <unary> }
 <term>			::= <factor> { ( "+" | "-" ) <factor> }
 
