@@ -35,28 +35,37 @@ fn bool Token.checkType(Token* token, TokenType type)
 }
 fn String Token.toString(Token* token)
 {
-    String result = "{ \"";
+    DString result;
+    result.new_init();
+    result.append("{ \"");
 
-    result = result.concat(token.content);
-    result = result.concat("\", ");
-    result = result.concat(token.type.name);
-    result = result.concat(" }");
+    result.append(token.content);
+    result.append("\", ");
+    result.append(token.type.name);
+    result.append(" }");
 
-    return result;
+    String str = result.tcopy_str();
+    result.free();
+
+    return str;
 }
 
 def TokenList = List(<Token>);
 
 fn String TokenList.toString(TokenList* tokens)
 {
-    String result = "[ ";
+    DString result;
+    result.new_init();
+    result.append("[ ");
     foreach (idx, &token : tokens)
     {
-        result = result.concat(token.toString());
-        result = result.concat(" ");
+        result.append(token.toString());
+        result.append(" ");
     }
-    result = result.concat("]\n");
-    return result;
+    result.append("]\n");
+    String str = result.tcopy_str();
+    result.free();
+    return str;
 }
 
 fn List(<Token>) tokenize(String expression)

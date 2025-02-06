@@ -156,21 +156,24 @@ struct Unary (ParsingExpression)
 }
 fn String Unary.toString(Unary* self) @dynamic
 {
-    String result = "";
+    DString result;
+    result.new_init();
     switch (self.operator)
     {
         case PLUS:
-            result = result.concat("+");
+            result.append("+");
         case MINUS:
-            result = result.concat("-");
+            result.append("-");
 
         case NONE:
         default:
             break;
     }
-    result = result.concat(self.primary.toString());
+    result.append(self.primary.toString());
+    String str = result.tcopy_str();
+    result.free();
 
-    return result;
+    return str;
 }
 fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
 {
@@ -226,22 +229,29 @@ struct Term (ParsingExpression)
 }
 fn String Term.toString(Term* self) @dynamic
 {
-    String result;
-    result = result.concat(self.left.toString());
+    if (self.right.len() == 0)
+    {
+        return self.left.toString();
+    }
+    DString result;
+    result.new_init();
+    result.append(self.left.toString());
 
     foreach (idx, rhs : self.right)
     {
         switch (rhs.operator)
         {
             case ADD:
-                result = result.concat(" + ");
+                result.append(" + ");
             case SUB:
-                result = result.concat(" - ");
+                result.append(" - ");
         }
-        result = result.concat(rhs.right.toString());
+        result.append(rhs.right.toString());
     }
+    String str = result.tcopy_str();
+    result.free();
 
-    return result;
+    return str;
 }
 fn Term*! parseTerm(TokenList tokens, int* currentPtr)
 {
@@ -333,22 +343,25 @@ fn String Factor.toString(Factor* self) @dynamic
     {
         return self.left.toString();
     }
-    String result;
-    result = result.concat(self.left.toString());
+    DString result;
+    result.new_init();
+    result.append(self.left.toString());
 
     foreach (idx, rhs : self.right)
     {
         switch (rhs.operator)
         {
             case MUL:
-                result = result.concat(" * ");
+                result.append(" * ");
             case DIV:
-                result = result.concat(" / ");
+                result.append(" / ");
         }
-        result = result.concat(rhs.right.toString());
+        result.append(rhs.right.toString());
     }
+    String str = result.tcopy_str();
+    result.free();
 
-    return result;
+    return str;
 }
 fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
 {
@@ -422,10 +435,14 @@ struct Grouping (ParsingExpression)
 }
 fn String Grouping.toString(Grouping* self) @dynamic
 {
-    String result = "(";
-    result = result.concat(self.term.toString());
-    result = result.concat(")");
-    return result;
+    DString result;
+    result.new_init();
+    result.append("(");
+    result.append(self.term.toString());
+    result.append(")");
+    String str = result.tcopy_str();
+    result.free();
+    return str;
 }
 fn Grouping*! parseGrouping(TokenList tokens, int* currentPtr)
 {
