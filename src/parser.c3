@@ -204,6 +204,113 @@ fn void Unary.free(Unary* self) @dynamic
     mem::free(self);
 }
 
+enum FactorOperator : int
+{
+    MUL,
+    DIV,
+}
+struct FactorRHS
+{
+    FactorOperator operator;
+    Unary* right;
+}
+struct Factor (ParsingExpression)
+{
+    Unary* left;
+    List(<FactorRHS>) right;
+}
+fn String Factor.toString(Factor* self) @dynamic
+{
+    if (self.right.len() == 0)
+    {
+        return self.left.toString();
+    }
+    DString result;
+    result.new_init();
+    result.append(self.left.toString());
+
+    foreach (idx, rhs : self.right)
+    {
+        switch (rhs.operator)
+        {
+            case MUL:
+                result.append(" * ");
+            case DIV:
+                result.append(" / ");
+        }
+        result.append(rhs.right.toString());
+    }
+    String str = result.tcopy_str();
+    result.free();
+
+    return str;
+}
+fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
+{
+    Factor* factor = mem::new(Factor);
+    factor.right.new_init();
+    if (try unaryL = parseUnary(tokens, currentPtr))
+    {
+        factor.left = unaryL;
+        int count;
+        while (true)
+        {
+            Token! op = consume(tokens, currentPtr, TokenType.STAR);
+            if (catch excuse = op) op = consume(tokens, currentPtr, TokenType.SLASH);
+            if (catch excuse = op) break;
+
+            factor.right.push(FactorRHS {});
+            switch (op.type)
+            {
+                case STAR:
+                    factor.right[count].operator = FactorOperator.MUL;
+                case SLASH:
+                    factor.right[count].operator = FactorOperator.DIV;
+                default:
+                    return ParsingError.INVALID?;
+            }
+            if (try unary = parseUnary(tokens, currentPtr))
+            {
+                factor.right[count].right = unary;
+                count++;
+            }
+            else
+            {
+                return ParsingError.INVALID?;
+            }
+        }
+    }
+    return factor;
+}
+fn double Factor.evaluate(Factor* self) @dynamic
+{
+    double result = self.left.evaluate();
+    double unaryEval;
+    foreach (idx, unaryRHS : self.right)
+    {
+        unaryEval = unaryRHS.right.evaluate();
+        switch (unaryRHS.operator)
+        {
+            case MUL:
+                result *= unaryEval;
+            case DIV:
+                result /= unaryEval;
+        }
+    }
+    return result;
+}
+fn void Factor.free(Factor* self) @dynamic
+{
+    if (self == null) return;
+    self.left.free();
+    foreach (idx, &unaryRHS : self.right)
+    {
+        unaryRHS.right.free();
+    }
+    self.right.free();
+    mem::free(self);
+}
+
 enum TermOperator : int
 {
     ADD,
@@ -309,113 +416,6 @@ fn void Term.free(Term* self) @dynamic
     foreach (idx, &factorRHS : self.right)
     {
         factorRHS.right.free();
-    }
-    self.right.free();
-    mem::free(self);
-}
-
-enum FactorOperator : int
-{
-    MUL,
-    DIV,
-}
-struct FactorRHS
-{
-    FactorOperator operator;
-    Unary* right;
-}
-struct Factor (ParsingExpression)
-{
-    Unary* left;
-    List(<FactorRHS>) right;
-}
-fn String Factor.toString(Factor* self) @dynamic
-{
-    if (self.right.len() == 0)
-    {
-        return self.left.toString();
-    }
-    DString result;
-    result.new_init();
-    result.append(self.left.toString());
-
-    foreach (idx, rhs : self.right)
-    {
-        switch (rhs.operator)
-        {
-            case MUL:
-                result.append(" * ");
-            case DIV:
-                result.append(" / ");
-        }
-        result.append(rhs.right.toString());
-    }
-    String str = result.tcopy_str();
-    result.free();
-
-    return str;
-}
-fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
-{
-    Factor* factor = mem::new(Factor);
-    factor.right.new_init();
-    if (try unaryL = parseUnary(tokens, currentPtr))
-    {
-        factor.left = unaryL;
-        int count;
-        while (true)
-        {
-            Token! op = consume(tokens, currentPtr, TokenType.STAR);
-            if (catch excuse = op) op = consume(tokens, currentPtr, TokenType.SLASH);
-            if (catch excuse = op) break;
-
-            factor.right.push(FactorRHS {});
-            switch (op.type)
-            {
-                case STAR:
-                    factor.right[count].operator = FactorOperator.MUL;
-                case SLASH:
-                    factor.right[count].operator = FactorOperator.DIV;
-                default:
-                    return ParsingError.INVALID?;
-            }
-            if (try unary = parseUnary(tokens, currentPtr))
-            {
-                factor.right[count].right = unary;
-                count++;
-            }
-            else
-            {
-                return ParsingError.INVALID?;
-            }
-        }
-    }
-    return factor;
-}
-fn double Factor.evaluate(Factor* self) @dynamic
-{
-    double result = self.left.evaluate();
-    double unaryEval;
-    foreach (idx, unaryRHS : self.right)
-    {
-        unaryEval = unaryRHS.right.evaluate();
-        switch (unaryRHS.operator)
-        {
-            case MUL:
-                result *= unaryEval;
-            case DIV:
-                result /= unaryEval;
-        }
-    }
-    return result;
-}
-fn void Factor.free(Factor* self) @dynamic
-{
-    if (self == null) return;
-    self.left.free();
-    foreach (idx, &unaryRHS : self.right)
-    {
-        unaryRHS.right.free();
     }
     self.right.free();
     mem::free(self);
