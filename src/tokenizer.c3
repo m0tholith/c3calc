@@ -53,7 +53,7 @@ fn String TokenList.toString(TokenList* tokens)
     foreach (idx, &token : tokens)
     {
         result = result.concat(token.toString());
-        result = result.concat(",");
+        result = result.concat(" ");
     }
     result = result.concat("]\n");
     return result;
