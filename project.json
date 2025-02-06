@@ -27,7 +27,7 @@
   // "target": "windows-x64",
   // Targets.
   "targets": {
-    "calculator": {
+    "c3calc": {
       // Executable or library.
       "type": "executable",
       // Additional libraries, sources

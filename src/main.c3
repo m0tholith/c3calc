@@ -1,4 +1,4 @@
-module calculator;
+module c3calc;
 
 import tokenizer;
 import parser;
