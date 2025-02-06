@@ -5,6 +5,7 @@
 
 <primary>		::= <number> | <grouping>
 <unary>			::= [ "-" ] <primary>
-<term>			::= <factor> { ( "+" | "-" ) <factor> }
 <factor>		::= <unary> { ( "*" | "/" ) <unary> }
+<term>			::= <factor> { ( "+" | "-" ) <factor> }
+
 <grouping>		::= "(" <term> ")"
