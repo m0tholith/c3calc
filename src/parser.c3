@@ -44,24 +44,6 @@ fn Token! peek(TokenList tokens, int* current)
     }
     return tokens[*current];
 }
-fn double strToNum(String str)
-{
-    double result = 0;
-    int power = 0;
-    foreach_r (digit : str)
-    {
-        if (digit == '.') continue;
-        double digitInt = (double)digit - (double)'0';
-        result += digitInt * (double)math::pow(10, power);
-
-        power++;
-    }
-    if (try idx = str.index_of_char('.'))
-    {
-        result /= (double)math::pow(10, (int)(str.len - idx - 1));
-    }
-    return result;
-}
 
 interface ParsingExpression
 {
@@ -136,7 +118,7 @@ fn double Primary.evaluate(Primary* self) @dynamic
     switch (self.value.type)
     {
         case String.typeid:
-            return strToNum(*(String*)self.value);
+            return (*(String*)self.value).to_double()!!;
         case Grouping.typeid:
             return ((Grouping*)self.value).evaluate();
     }
