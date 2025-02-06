@@ -106,7 +106,7 @@ fn String Primary.toString(Primary* self) @dynamic
 fn Primary*! parsePrimary(TokenList tokens, int* currentPtr)
 {
     Primary* primary = mem::new(Primary);
-    if (try number = consume(tokens, currentPtr, TokenType.NUMBER))
+    if (try number = consume(tokens, currentPtr, NUMBER))
     {
         primary.value = @clone(number.content.copy());
         return primary;
@@ -175,7 +175,7 @@ fn String Unary.toString(Unary* self) @dynamic
 fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
 {
     Unary* unary = mem::new(Unary);
-    if (try op = consume(tokens, currentPtr, TokenType.MINUS))
+    if (try op = consume(tokens, currentPtr, MINUS))
     {
         unary.operator = UnaryOperator.MINUS;
     }
@@ -255,17 +255,17 @@ fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
         int count;
         while (true)
         {
-            Token! op = consume(tokens, currentPtr, TokenType.STAR);
-            if (catch excuse = op) op = consume(tokens, currentPtr, TokenType.SLASH);
+            Token! op = consume(tokens, currentPtr, STAR);
+            if (catch excuse = op) op = consume(tokens, currentPtr, SLASH);
             if (catch excuse = op) break;
 
             factor.right.push(FactorRHS {});
             switch (op.type)
             {
                 case STAR:
-                    factor.right[count].operator = FactorOperator.MUL;
+                    factor.right[count].operator = MUL;
                 case SLASH:
-                    factor.right[count].operator = FactorOperator.DIV;
+                    factor.right[count].operator = DIV;
                 default:
                     return ParsingError.INVALID?;
             }
@@ -362,17 +362,17 @@ fn Term*! parseTerm(TokenList tokens, int* currentPtr)
         int count;
         while (true)
         {
-            Token! op = consume(tokens, currentPtr, TokenType.PLUS);
-            if (catch excuse = op) op = consume(tokens, currentPtr, TokenType.MINUS);
+            Token! op = consume(tokens, currentPtr, PLUS);
+            if (catch excuse = op) op = consume(tokens, currentPtr, MINUS);
             if (catch excuse = op) break;
 
             term.right.push(TermRHS {});
             switch (op.type)
             {
                 case PLUS:
-                    term.right[count].operator = TermOperator.ADD;
+                    term.right[count].operator = ADD;
                 case MINUS:
-                    term.right[count].operator = TermOperator.SUB;
+                    term.right[count].operator = SUB;
                 default:
                     return ParsingError.INVALID?;
             }

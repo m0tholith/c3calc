@@ -89,31 +89,31 @@ fn List(<Token>) tokenize(String expression)
 
             // single character
             case '(':
-                tokens.push(Token { "(", TokenType.LEFT_PAREN, position } );
+                tokens.push(Token { "(", LEFT_PAREN, position } );
                 position++;
             case ')':
-                tokens.push(Token { ")", TokenType.RIGHT_PAREN, position } );
+                tokens.push(Token { ")", RIGHT_PAREN, position } );
                 position++;
             case ',':
-                tokens.push(Token { ",", TokenType.COMMA, position } );
+                tokens.push(Token { ",", COMMA, position } );
                 position++;
             case '.':
-                tokens.push(Token { ".", TokenType.DOT, position } );
+                tokens.push(Token { ".", DOT, position } );
                 position++;
             case '-':
-                tokens.push(Token { "-", TokenType.MINUS, position } );
+                tokens.push(Token { "-", MINUS, position } );
                 position++;
             case '+':
-                tokens.push(Token { "+", TokenType.PLUS, position } );
+                tokens.push(Token { "+", PLUS, position } );
                 position++;
             case '/':
-                tokens.push(Token { "/", TokenType.SLASH, position } );
+                tokens.push(Token { "/", SLASH, position } );
                 position++;
             case '*':
-                tokens.push(Token { "*", TokenType.STAR, position } );
+                tokens.push(Token { "*", STAR, position } );
                 position++;
             case '^':
-                tokens.push(Token { "^", TokenType.CARET, position } );
+                tokens.push(Token { "^", CARET, position } );
                 position++;
 
             default:
@@ -127,7 +127,7 @@ fn List(<Token>) tokenize(String expression)
                         if (position >= expression.len) break;
                         current = expression[position];
                     }
-                    Token number = { expression[numStart .. position - 1], TokenType.NUMBER, numStart };
+                    Token number = { expression[numStart .. position - 1], NUMBER, numStart };
                     tokens.push(number);
                     break;
                 }
