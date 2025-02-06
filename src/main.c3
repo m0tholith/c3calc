@@ -36,6 +36,7 @@ fn int main(String[] args)
         io::printn(expression.toString());
         double expressionValue = expression.evaluate();
         io::printfn("is equal to '%f'", expressionValue);
+        expression.free();
     }
     else
     {

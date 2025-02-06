@@ -49,6 +49,7 @@ interface ParsingExpression
 {
     fn String toString();
     fn double evaluate();
+    fn void free();
 }
 
 
@@ -76,6 +77,12 @@ fn String Expression.toString(Expression* self) @dynamic
 fn double Expression.evaluate(Expression* self) @dynamic
 {
     return self.term.evaluate();
+}
+fn void Expression.free(Expression* self) @dynamic
+{
+    if (self == null) return;
+    self.term.free();
+    free(self);
 }
 
 struct Primary (ParsingExpression)
@@ -123,6 +130,18 @@ fn double Primary.evaluate(Primary* self) @dynamic
             return ((Grouping*)self.value).evaluate();
     }
     return 999.99999;
+}
+fn void Primary.free(Primary* self) @dynamic
+{
+    if (self == null) return;
+    if (self.value.ptr != null) switch (self.value.type)
+    {
+        case String.typeid:
+            free(self.value.ptr);
+        case Grouping.typeid:
+            ((Grouping*)self.value).free();
+    }
+    mem::free(self);
 }
 
 enum UnaryOperator : int
@@ -183,6 +202,12 @@ fn double Unary.evaluate(Unary* self) @dynamic
         case MINUS:
             return -1 * self.primary.evaluate();
     }
+}
+fn void Unary.free(Unary* self) @dynamic
+{
+    if (self == null) return;
+    self.primary.free();
+    mem::free(self);
 }
 
 enum TermOperator : int
@@ -275,6 +300,17 @@ fn double Term.evaluate(Term* self) @dynamic
         result += factorEval;
     }
     return result;
+}
+fn void Term.free(Term* self) @dynamic
+{
+    if (self == null) return;
+    self.left.free();
+    foreach (idx, &factorRHS : self.right)
+    {
+        factorRHS.right.free();
+    }
+    self.right.free();
+    mem::free(self);
 }
 
 enum FactorOperator : int
@@ -369,6 +405,17 @@ fn double Factor.evaluate(Factor* self) @dynamic
     }
     return result;
 }
+fn void Factor.free(Factor* self) @dynamic
+{
+    if (self == null) return;
+    self.left.free();
+    foreach (idx, &unaryRHS : self.right)
+    {
+        unaryRHS.right.free();
+    }
+    self.right.free();
+    mem::free(self);
+}
 
 struct Grouping (ParsingExpression)
 {
@@ -394,4 +441,9 @@ fn Grouping*! parseGrouping(TokenList tokens, int* currentPtr)
 fn double Grouping.evaluate(Grouping* self) @dynamic
 {
     return self.term.evaluate();
+}
+fn void Grouping.free(Grouping* self) @dynamic
+{
+    if (self == null) return;
+    free(self.term);
 }
