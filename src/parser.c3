@@ -142,8 +142,8 @@ fn void Primary.free(Primary* self) @dynamic
     if (self.value.ptr != null) switch (self.value.type)
     {
         case String.typeid:
-            free(((String*)self.value).ptr);
-            free(self.value.ptr);
+            free(*(String*)self.value);
+            free(self.value);
         case Grouping.typeid:
             ((Grouping*)self.value).free();
     }
@@ -197,7 +197,8 @@ fn Function*! parseFunction(TokenList tokens, int* currentPtr)
 fn void Function.free(Function* self) @dynamic
 {
     if (self.func != null) free(self.func);
-    if (self.primary != null) free(self.primary);
+    if (self.primary != null) self.primary.free();
+    mem::free(self);
 }
 
 struct Exponent (ParsingExpression)
