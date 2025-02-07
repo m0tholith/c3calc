@@ -16,6 +16,9 @@ fault ParsingError
 {
     INVALID,
 }
+<*
+ @require current != null : "current ptr is null"
+ *>
 fn Token! consume(TokenList tokens, int* current, TokenType type)
 {
     if ((*current) >= tokens.len())
@@ -28,6 +31,9 @@ fn Token! consume(TokenList tokens, int* current, TokenType type)
     }
     return TokenWalk.NOTFOUND?;
 }
+<*
+ @require current != null : "current ptr is null"
+ *>
 fn Token! previous(TokenList tokens, int* current)
 {
     if ((*current) == 0 || (*current) > tokens.len())
@@ -36,6 +42,9 @@ fn Token! previous(TokenList tokens, int* current)
     }
     return tokens[(usz)(*current - 1)];
 }
+<*
+ @require current != null : "current ptr is null"
+ *>
 fn Token! peek(TokenList tokens, int* current)
 {
     if ((*current) < 0 || (*current) >= tokens.len())
@@ -70,13 +79,18 @@ fn Expression*! parseExpression(TokenList tokens)
     result.expr = expr;
     return result;
 }
+<*
+ @require self != null : "expression is null"
+ *>
 fn String Expression.toString(Expression* self) @dynamic
 {
     return self.expr.toString();
 }
+<*
+ @require self != null : "expression is null"
+ *>
 fn void Expression.free(Expression* self) @dynamic
 {
-    if (self == null) return;
     self.expr.free();
     free(self);
 }
@@ -88,6 +102,9 @@ struct Primary (ParsingExpression)
     //  - Grouping* grouping
     any value;
 }
+<*
+ @require self != null : "primary is null"
+ *>
 fn String Primary.toString(Primary* self) @dynamic
 {
     switch (self.value.type)
@@ -99,6 +116,9 @@ fn String Primary.toString(Primary* self) @dynamic
     }
     return "(ERROR!)";
 }
+<*
+ @require currentPtr != null : "current is null"
+ *>
 fn Primary*! parsePrimary(TokenList tokens, int* currentPtr)
 {
     Primary* primary = mem::new(Primary);
@@ -114,9 +134,11 @@ fn Primary*! parsePrimary(TokenList tokens, int* currentPtr)
     }
     return ParsingError.INVALID?;
 }
+<*
+ @require self != null : "primary is null"
+ *>
 fn void Primary.free(Primary* self) @dynamic
 {
-    if (self == null) return;
     if (self.value.ptr != null) switch (self.value.type)
     {
         case String.typeid:
@@ -132,6 +154,9 @@ struct Exponent (ParsingExpression)
 {
 	List(<Primary*>) primaryList;
 }
+<*
+ @require self != null : "exponent is null"
+ *>
 fn String Exponent.toString(Exponent* self) @dynamic
 {
 	if (self.primaryList.len() == 1) return self.primaryList[0].toString();
@@ -149,6 +174,9 @@ fn String Exponent.toString(Exponent* self) @dynamic
 	result.free();
 	return str;
 }
+<*
+ @require currentPtr != null : "current is null"
+ *>
 fn Exponent*! parseExponent(TokenList tokens, int* currentPtr)
 {
 	Exponent* exponent = mem::new(Exponent);
@@ -163,6 +191,9 @@ fn Exponent*! parseExponent(TokenList tokens, int* currentPtr)
 	}
 	return exponent;
 }
+<*
+ @require self != null : "exponent is null"
+ *>
 fn void Exponent.free(Exponent* self) @dynamic
 {
 	foreach (primary : self.primaryList)
@@ -183,6 +214,9 @@ struct Unary (ParsingExpression)
     UnaryOperator operator;
     Exponent* exponent;
 }
+<*
+ @require self != null : "unary is null"
+ *>
 fn String Unary.toString(Unary* self) @dynamic
 {
     DString result;
@@ -202,6 +236,9 @@ fn String Unary.toString(Unary* self) @dynamic
 
     return str;
 }
+<*
+ @require currentPtr != null : "current is null"
+ *>
 fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
 {
     Unary* unary = mem::new(Unary);
@@ -217,9 +254,11 @@ fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
     unary.exponent = p;
     return unary;
 }
+<*
+ @require self != null : "unary is null"
+ *>
 fn void Unary.free(Unary* self) @dynamic
 {
-    if (self == null) return;
     self.exponent.free();
     mem::free(self);
 }
@@ -239,6 +278,9 @@ struct Factor (ParsingExpression)
     Unary* left;
     List(<FactorRHS>) right;
 }
+<*
+ @require self != null : "factor is null"
+ *>
 fn String Factor.toString(Factor* self) @dynamic
 {
     if (self.right.len() == 0)
@@ -265,6 +307,9 @@ fn String Factor.toString(Factor* self) @dynamic
 
     return str;
 }
+<*
+ @require currentPtr != null : "current is null"
+ *>
 fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
 {
     Factor* factor = mem::new(Factor);
@@ -302,9 +347,11 @@ fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
     }
     return factor;
 }
+<*
+ @require self != null : "factor is null"
+ *>
 fn void Factor.free(Factor* self) @dynamic
 {
-    if (self == null) return;
     self.left.free();
     foreach (idx, &unaryRHS : self.right)
     {
@@ -329,6 +376,9 @@ struct Term (ParsingExpression)
     Factor* left;
     List(<TermRHS>) right;
 }
+<*
+ @require self != null : "term is null"
+ *>
 fn String Term.toString(Term* self) @dynamic
 {
     if (self.right.len() == 0)
@@ -355,6 +405,9 @@ fn String Term.toString(Term* self) @dynamic
 
     return str;
 }
+<*
+ @require currentPtr != null : "current is null"
+ *>
 fn Term*! parseTerm(TokenList tokens, int* currentPtr)
 {
     Term* term = mem::new(Term);
@@ -394,9 +447,11 @@ fn Term*! parseTerm(TokenList tokens, int* currentPtr)
     free(term);
     return ParsingError.INVALID?;
 }
+<*
+ @require self != null : "term is null"
+ *>
 fn void Term.free(Term* self) @dynamic
 {
-    if (self == null) return;
     self.left.free();
     foreach (idx, &factorRHS : self.right)
     {
@@ -410,6 +465,9 @@ struct Grouping (ParsingExpression)
 {
     Term* expr;
 }
+<*
+ @require self != null : "grouping is null"
+ *>
 fn String Grouping.toString(Grouping* self) @dynamic
 {
     DString result;
@@ -421,6 +479,9 @@ fn String Grouping.toString(Grouping* self) @dynamic
     result.free();
     return str;
 }
+<*
+ @require currentPtr != null : "current is null"
+ *>
 fn Grouping*! parseGrouping(TokenList tokens, int* currentPtr)
 {
     if (try left_paren = consume(tokens, currentPtr, LEFT_PAREN) && try term = parseTerm(tokens, currentPtr) && try right_paren = consume(tokens, currentPtr, RIGHT_PAREN))
@@ -431,9 +492,11 @@ fn Grouping*! parseGrouping(TokenList tokens, int* currentPtr)
     }
     return ParsingError.INVALID?;
 }
+<*
+ @require self != null : "grouping is null"
+ *>
 fn void Grouping.free(Grouping* self) @dynamic
 {
-    if (self == null) return;
     self.expr.free();
     mem::free(self);
 }

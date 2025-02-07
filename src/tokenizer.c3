@@ -25,6 +25,9 @@ struct Token
     TokenType type;
     int location; // index of first character in string
 }
+<*
+ @require token != null : "token is null"
+ *>
 fn bool Token.checkType(Token* token, TokenType type)
 {
     if (token.type.value & type.value > 0)
@@ -33,6 +36,9 @@ fn bool Token.checkType(Token* token, TokenType type)
     }
     return false;
 }
+<*
+ @require token != null : "token is null"
+ *>
 fn String Token.toString(Token* token)
 {
     DString result;
@@ -52,6 +58,9 @@ fn String Token.toString(Token* token)
 
 def TokenList = List(<Token>);
 
+<*
+ @require tokens != null : "token list is null"
+ *>
 fn String TokenList.toString(TokenList* tokens)
 {
     DString result;
@@ -68,6 +77,9 @@ fn String TokenList.toString(TokenList* tokens)
     return str;
 }
 
+<*
+ @require expression.len != 0 : "expression is empty"
+ *>
 fn List(<Token>) tokenize(String expression)
 {
     List(<Token>) tokens;
