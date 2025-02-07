@@ -43,12 +43,12 @@ fn double Function.evaluate(Function* self) @dynamic
  *>
 fn double Exponent.evaluate(Exponent* self) @dynamic
 {
-	if (self.primaryList.len() == 0) return 999.99999;
+	if (self.valueList.len() == 0) return 999.99999;
 
-	double result = self.primaryList[^1].evaluate();
-	for (int i = (int)self.primaryList.len() - 1 - 1; i >= 0; i--)
+	double result = self.valueList[^1].evaluate();
+	for (int i = (int)self.valueList.len() - 1 - 1; i >= 0; i--)
 	{
-		result = math::pow(self.primaryList[i].evaluate(), result);
+		result = math::pow(self.valueList[i].evaluate(), result);
 	}
 	return result;
 }

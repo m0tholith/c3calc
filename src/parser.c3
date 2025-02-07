@@ -202,22 +202,22 @@ fn void Function.free(Function* self) @dynamic
 
 struct Exponent (ParsingExpression)
 {
-	List(<Primary*>) primaryList;
+	List(<Function*>) valueList;
 }
 <*
  @require self != null : "exponent is null"
  *>
 fn String Exponent.toString(Exponent* self) @dynamic
 {
-	if (self.primaryList.len() == 1) return self.primaryList[0].toString();
+	if (self.valueList.len() == 1) return self.valueList[0].toString();
 
 	DString result;
 	result.new_init();
-	result.append(self.primaryList[0].toString());
+	result.append(self.valueList[0].toString());
 
-	for (int i = 1; i < self.primaryList.len(); i++)
+	for (int i = 1; i < self.valueList.len(); i++)
 	{
-		result.appendf(" ^ %s", self.primaryList[i].toString());
+		result.appendf(" ^ %s", self.valueList[i].toString());
 	}
 
 	String str = result.tcopy_str();
@@ -230,10 +230,10 @@ fn String Exponent.toString(Exponent* self) @dynamic
 fn Exponent*! parseExponent(TokenList tokens, int* currentPtr)
 {
 	Exponent* exponent = mem::new(Exponent);
-	exponent.primaryList.new_init();
-	while (try primary = parsePrimary(tokens, currentPtr))
+	exponent.valueList.new_init();
+	while (try function = parseFunction(tokens, currentPtr))
 	{
-		exponent.primaryList.push(primary);
+		exponent.valueList.push(function);
 		if (catch nonExponent = consume(tokens, currentPtr, CARET))
 		{
 			break;
@@ -246,11 +246,11 @@ fn Exponent*! parseExponent(TokenList tokens, int* currentPtr)
  *>
 fn void Exponent.free(Exponent* self) @dynamic
 {
-	foreach (primary : self.primaryList)
+	foreach (primary : self.valueList)
 	{
 		primary.free();
 	}
-	self.primaryList.free();
+	self.valueList.free();
 	mem::free(self);
 }
 
