@@ -17,6 +17,7 @@ enum TokenType : (inline int value, String name)
 
     // Literals.
     NUMBER       = { 1 << 9, "NUMBER" },
+    WORD         = { 1 << 10, "WORD" },
 }
 
 struct Token
@@ -143,6 +144,19 @@ fn List(<Token>) tokenize(String expression)
                     tokens.push(number);
                     break;
                 }
+				else if (isLetter(current))
+				{
+					int letterStart = position;
+					while (isLetter(current))
+					{
+						position++;
+						if (position >= expression.len) break;
+						current = expression[position];
+					}
+					Token word = { expression[letterStart .. position - 1], WORD, letterStart };
+					tokens.push(word);
+					break;
+				}
                 return tokens;
         }
     }
@@ -153,4 +167,8 @@ fn List(<Token>) tokenize(String expression)
 fn bool isDigit(char c)
 {
     return '0' <= c && c <= '9';
+}
+fn bool isLetter(char c)
+{
+	return ('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z');
 }
