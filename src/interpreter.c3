@@ -31,6 +31,14 @@ fn double Primary.evaluate(Primary* self) @dynamic
     return 999.99999;
 }
 <*
+ @require self != null : "function is null"
+ *>
+fn double Function.evaluate(Function* self) @dynamic
+{
+    // @todo: evaluate actual function
+    return self.primary.evaluate();
+}
+<*
  @require self != null : "exponent is null"
  *>
 fn double Exponent.evaluate(Exponent* self) @dynamic

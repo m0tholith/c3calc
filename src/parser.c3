@@ -150,6 +150,56 @@ fn void Primary.free(Primary* self) @dynamic
     mem::free(self);
 }
 
+struct Function (ParsingExpression)
+{
+    String* func;
+    Primary* primary;
+}
+<*
+ @require self != null : "function is null"
+ *>
+fn String Function.toString(Function* self) @dynamic
+{
+    DString result;
+    result.new_init();
+
+    result.appendf("%s%s", *self.func, self.primary.toString());
+
+    String str = result.tcopy_str();
+    result.free();
+    return str;
+}
+<*
+ @require currentPtr != null : "current is null"
+ *>
+fn Function*! parseFunction(TokenList tokens, int* currentPtr)
+{
+    Function* function = mem::new(Function);
+    if (try word = consume(tokens, currentPtr, WORD))
+    {
+        function.func = @clone(word.content);
+    }
+    else
+    {
+        function.func = mem::new(String, "");
+    }
+    if (try primary = parsePrimary(tokens, currentPtr))
+    {
+        function.primary = primary;
+        return function;
+    }
+    function.free();
+    return ParsingError.INVALID?;
+}
+<*
+ @require self != null : "function is null"
+ *>
+fn void Function.free(Function* self) @dynamic
+{
+    if (self.func != null) free(self.func);
+    if (self.primary != null) free(self.primary);
+}
+
 struct Exponent (ParsingExpression)
 {
 	List(<Primary*>) primaryList;
