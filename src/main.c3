@@ -2,6 +2,7 @@ module c3calc;
 
 import tokenizer;
 import parser;
+import interpreter;
 import std::io;
 
 const String ZERO  = "0";

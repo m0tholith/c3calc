@@ -74,10 +74,6 @@ fn String Expression.toString(Expression* self) @dynamic
 {
     return self.expr.toString();
 }
-fn double Expression.evaluate(Expression* self) @dynamic
-{
-    return self.expr.evaluate();
-}
 fn void Expression.free(Expression* self) @dynamic
 {
     if (self == null) return;
@@ -117,17 +113,6 @@ fn Primary*! parsePrimary(TokenList tokens, int* currentPtr)
         return primary;
     }
     return ParsingError.INVALID?;
-}
-fn double Primary.evaluate(Primary* self) @dynamic
-{
-    switch (self.value.type)
-    {
-        case String.typeid:
-            return (*(String*)self.value).to_double()!!;
-        case Grouping.typeid:
-            return ((Grouping*)self.value).evaluate();
-    }
-    return 999.99999;
 }
 fn void Primary.free(Primary* self) @dynamic
 {
@@ -177,17 +162,6 @@ fn Exponent*! parseExponent(TokenList tokens, int* currentPtr)
 		}
 	}
 	return exponent;
-}
-fn double Exponent.evaluate(Exponent* self) @dynamic
-{
-	if (self.primaryList.len() == 0) return 999.99999;
-
-	double result = self.primaryList[^1].evaluate();
-	for (int i = (int)self.primaryList.len() - 1 - 1; i >= 0; i--)
-	{
-		result = math::pow(self.primaryList[i].evaluate(), result);
-	}
-	return result;
 }
 fn void Exponent.free(Exponent* self) @dynamic
 {
@@ -242,16 +216,6 @@ fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
     }
     unary.exponent = p;
     return unary;
-}
-fn double Unary.evaluate(Unary* self) @dynamic
-{
-    switch (self.operator)
-    {
-        case NONE:
-            return self.exponent.evaluate();
-        case MINUS:
-            return -1 * self.exponent.evaluate();
-    }
 }
 fn void Unary.free(Unary* self) @dynamic
 {
@@ -337,23 +301,6 @@ fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
         }
     }
     return factor;
-}
-fn double Factor.evaluate(Factor* self) @dynamic
-{
-    double result = self.left.evaluate();
-    double unaryEval;
-    foreach (idx, unaryRHS : self.right)
-    {
-        unaryEval = unaryRHS.right.evaluate();
-        switch (unaryRHS.operator)
-        {
-            case MUL:
-                result *= unaryEval;
-            case DIV:
-                result /= unaryEval;
-        }
-    }
-    return result;
 }
 fn void Factor.free(Factor* self) @dynamic
 {
@@ -447,24 +394,6 @@ fn Term*! parseTerm(TokenList tokens, int* currentPtr)
     free(term);
     return ParsingError.INVALID?;
 }
-fn double Term.evaluate(Term* self) @dynamic
-{
-    double result = self.left.evaluate();
-    double factorEval;
-    foreach (idx, factorRHS : self.right)
-    {
-        switch (factorRHS.operator)
-        {
-            case ADD:
-                factorEval = +1;
-            case SUB:
-                factorEval = -1;
-        }
-        factorEval *= factorRHS.right.evaluate();
-        result += factorEval;
-    }
-    return result;
-}
 fn void Term.free(Term* self) @dynamic
 {
     if (self == null) return;
@@ -501,10 +430,6 @@ fn Grouping*! parseGrouping(TokenList tokens, int* currentPtr)
         return grouping;
     }
     return ParsingError.INVALID?;
-}
-fn double Grouping.evaluate(Grouping* self) @dynamic
-{
-    return self.expr.evaluate();
 }
 fn void Grouping.free(Grouping* self) @dynamic
 {
