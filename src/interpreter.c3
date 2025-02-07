@@ -3,6 +3,41 @@ module interpreter;
 import tokenizer;
 import parser;
 import std::math;
+import std::collections::map;
+
+
+def FunctionDefinition = fn double(double x);
+def FunctionTable = HashMap(<String, FunctionDefinition>);
+
+struct Interpreter
+{
+    FunctionTable functions;
+}
+fn void Interpreter.new_init(Interpreter* self)
+{
+    self.functions.new_init();
+}
+fn void Interpreter.add_function(Interpreter* self, String name, FunctionDefinition function)
+{
+    self.functions.set(name, function);
+}
+fn double! Interpreter.evaluate(Interpreter* self, String calculation)
+{
+    TokenList tokens = tokenizer::tokenize(calculation);
+    defer tokens.free();
+
+    Expression*! expression = parser::parseExpression(tokens);
+    if (catch excuse = expression)
+    {
+        return excuse?;
+    }
+    defer expression.free();
+    return expression.evaluate();
+}
+fn void Interpreter.free(Interpreter* self)
+{
+    self.functions.free();
+}
 
 interface ParsingExpression
 {
