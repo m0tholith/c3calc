@@ -7,21 +7,17 @@ import std::io;
 
 fn int main(String[] args)
 {
-    TokenList tokens = tokenizer::tokenize(args[1]);
-    io::printn(tokens.toString());
+    Interpreter interpreter;
+    interpreter.new_init();
 
-    if (try expression = parser::parseExpression(tokens))
+    if (try result = interpreter.evaluate(args[1]))
     {
-        io::printn(expression.toString());
-        double expressionValue = expression.evaluate();
-        io::printfn("is equal to '%f'", expressionValue);
-        expression.free();
+        io::printn(result);
     }
     else
     {
         io::printn("ERROR!!!!");
     }
 
-    tokens.free();
 	return 0;
 }
