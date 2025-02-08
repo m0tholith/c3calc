@@ -18,6 +18,9 @@ enum TokenType : (inline int value, String name)
     // Literals.
     NUMBER       = { 1 << 9, "NUMBER" },
     WORD         = { 1 << 10, "WORD" },
+
+	// misc
+	UNKNOWN		 = { 1 << 11, "UNKNOWN" },
 }
 
 struct Token
@@ -31,11 +34,7 @@ struct Token
  *>
 fn bool Token.checkType(Token* token, TokenType type)
 {
-    if (token.type.value & type.value > 0)
-    {
-        return true;
-    }
-    return false;
+    return token.type.value & type.value > 0;
 }
 <*
  @require token != null : "token is null"
@@ -44,6 +43,8 @@ fn String Token.toString(Token* token)
 {
     DString result;
     result.new_init();
+    defer result.free();
+
     result.append("{ \"");
 
     result.append(token.content);
@@ -52,7 +53,6 @@ fn String Token.toString(Token* token)
     result.append(" }");
 
     String str = result.tcopy_str();
-    result.free();
 
     return str;
 }
@@ -65,7 +65,9 @@ def TokenList = List(<Token>);
 fn String TokenList.toString(TokenList* tokens)
 {
     DString result;
+    defer result.free();
     result.new_init();
+
     result.append("[ ");
     foreach (idx, &token : tokens)
     {
@@ -74,7 +76,7 @@ fn String TokenList.toString(TokenList* tokens)
     }
     result.append("]\n");
     String str = result.tcopy_str();
-    result.free();
+
     return str;
 }
 
@@ -157,7 +159,15 @@ fn List(<Token>) tokenize(String expression)
 					tokens.push(word);
 					break;
 				}
-                return tokens;
+				int tokenStart = position;
+				while (!isWhitespace(current))
+				{
+					position++;
+					if (position >= expression.len) break;
+					current = expression[position];
+				}
+				Token unknown = { expression[tokenStart .. position - 1], UNKNOWN, tokenStart };
+				tokens.push(unknown);
         }
     }
 
@@ -171,4 +181,8 @@ fn bool isDigit(char c)
 fn bool isLetter(char c)
 {
 	return ('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z');
+}
+fn bool isWhitespace(char c)
+{
+    return c == ' ' || c == '\t' || c == '\r';
 }
