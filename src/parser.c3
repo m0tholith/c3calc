@@ -15,6 +15,13 @@ fault TokenWalk
 fault ParsingError
 {
     INVALID,
+    PRIMARY_FAIL,
+    FUNCTION_FAIL,
+    EXPONENT_FAIL,
+    UNARY_FAIL,
+    FACTOR_FAIL,
+    TERM_FAIL,
+    GROUPING_FAIL,
 }
 <*
  @require current != null : "current ptr is null"
@@ -73,7 +80,7 @@ fn Expression*! parseExpression(TokenList tokens)
     Term*! expr = parseTerm(tokens, current);
     free(current);
 
-    if (catch excuse = expr) return ParsingError.INVALID?;
+    if (catch excuse = expr) return excuse?;
 
     result.expr = expr;
     return result;
@@ -112,6 +119,8 @@ fn String Primary.toString(Primary* self) @dynamic
             return *(String*)self.value;
         case Grouping.typeid:
             return ((Grouping*)self.value).toString();
+        default:
+            io::eprintf("Could not convert primary to string: invalid value type");
     }
     return "(ERROR!)";
 }
@@ -131,7 +140,8 @@ fn Primary*! parsePrimary(TokenList tokens, int* currentPtr)
         primary.value = grouping;
         return primary;
     }
-    return ParsingError.INVALID?;
+    mem::free(primary);
+    return ParsingError.PRIMARY_FAIL?;
 }
 <*
  @require self != null : "primary is null"
@@ -161,11 +171,11 @@ fn String Function.toString(Function* self) @dynamic
 {
     DString result;
     result.new_init();
+    defer result.free();
 
     result.appendf("%s%s", *self.func, self.primary.toString());
 
     String str = result.tcopy_str();
-    result.free();
     return str;
 }
 <*
@@ -188,7 +198,7 @@ fn Function*! parseFunction(TokenList tokens, int* currentPtr)
         return function;
     }
     function.free();
-    return ParsingError.INVALID?;
+    return ParsingError.FUNCTION_FAIL?;
 }
 <*
  @require self != null : "function is null"
@@ -213,6 +223,7 @@ fn String Exponent.toString(Exponent* self) @dynamic
 
 	DString result;
 	result.new_init();
+	defer result.free();
 	result.append(self.valueList[0].toString());
 
 	for (int i = 1; i < self.valueList.len(); i++)
@@ -221,7 +232,6 @@ fn String Exponent.toString(Exponent* self) @dynamic
 	}
 
 	String str = result.tcopy_str();
-	result.free();
 	return str;
 }
 <*
@@ -239,6 +249,10 @@ fn Exponent*! parseExponent(TokenList tokens, int* currentPtr)
 			break;
 		}
 	}
+    if (exponent.valueList.len() == 0)
+    {
+        return ParsingError.EXPONENT_FAIL?;
+    }
 	return exponent;
 }
 <*
@@ -271,6 +285,7 @@ fn String Unary.toString(Unary* self) @dynamic
 {
     DString result;
     result.new_init();
+    defer result.free();
     switch (self.operator)
     {
         case MINUS:
@@ -282,7 +297,6 @@ fn String Unary.toString(Unary* self) @dynamic
     }
     result.append(self.exponent.toString());
     String str = result.tcopy_str();
-    result.free();
 
     return str;
 }
@@ -299,7 +313,8 @@ fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
     Exponent*! p = parseExponent(tokens, currentPtr);
     if (catch excuse = p)
     {
-        return ParsingError.INVALID?;
+        mem::free(unary);
+        return excuse?;
     }
     unary.exponent = p;
     return unary;
@@ -333,12 +348,9 @@ struct Factor (ParsingExpression)
  *>
 fn String Factor.toString(Factor* self) @dynamic
 {
-    if (self.right.len() == 0)
-    {
-        return self.left.toString();
-    }
     DString result;
     result.new_init();
+    defer result.free();
     result.append(self.left.toString());
 
     foreach (idx, rhs : self.right)
@@ -353,7 +365,6 @@ fn String Factor.toString(Factor* self) @dynamic
         result.append(rhs.right.toString());
     }
     String str = result.tcopy_str();
-    result.free();
 
     return str;
 }
@@ -363,9 +374,9 @@ fn String Factor.toString(Factor* self) @dynamic
 fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
 {
     Factor* factor = mem::new(Factor);
-    factor.right.new_init();
     if (try unaryL = parseUnary(tokens, currentPtr))
     {
+        factor.right.new_init();
         factor.left = unaryL;
         int count;
         while (true)
@@ -374,28 +385,30 @@ fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
             if (catch excuse = op) op = consume(tokens, currentPtr, SLASH);
             if (catch excuse = op) break;
 
-            factor.right.push(FactorRHS {});
+            FactorRHS rhs = {};
             switch (op.type)
             {
                 case STAR:
-                    factor.right[count].operator = MUL;
+                    rhs.operator = MUL;
                 case SLASH:
-                    factor.right[count].operator = DIV;
+                    rhs.operator = DIV;
                 default:
-                    return ParsingError.INVALID?;
+                    factor.free();
+                    return ParsingError.FACTOR_FAIL?;
             }
-            if (try unary = parseUnary(tokens, currentPtr))
+            Unary*! unary = parseUnary(tokens, currentPtr);
+            if (catch excuse = unary)
             {
-                factor.right[count].right = unary;
-                count++;
+                factor.free();
+                return excuse?;
             }
-            else
-            {
-                return ParsingError.INVALID?;
-            }
+            rhs.right = unary;
+            factor.right.push(rhs);
         }
+        return factor;
     }
-    return factor;
+    mem::free(factor);
+    return ParsingError.FACTOR_FAIL?;
 }
 <*
  @require self != null : "factor is null"
@@ -437,6 +450,7 @@ fn String Term.toString(Term* self) @dynamic
     }
     DString result;
     result.new_init();
+    defer result.free();
     result.append(self.left.toString());
 
     foreach (idx, rhs : self.right)
@@ -451,7 +465,6 @@ fn String Term.toString(Term* self) @dynamic
         result.append(rhs.right.toString());
     }
     String str = result.tcopy_str();
-    result.free();
 
     return str;
 }
@@ -461,9 +474,9 @@ fn String Term.toString(Term* self) @dynamic
 fn Term*! parseTerm(TokenList tokens, int* currentPtr)
 {
     Term* term = mem::new(Term);
-    term.right.new_init();
     if (try factorL = parseFactor(tokens, currentPtr))
     {
+        term.right.new_init();
         term.left = factorL;
         int count;
         while (true)
@@ -472,30 +485,30 @@ fn Term*! parseTerm(TokenList tokens, int* currentPtr)
             if (catch excuse = op) op = consume(tokens, currentPtr, MINUS);
             if (catch excuse = op) break;
 
-            term.right.push(TermRHS {});
+            TermRHS rhs = {};
             switch (op.type)
             {
                 case PLUS:
-                    term.right[count].operator = ADD;
+                    rhs.operator = ADD;
                 case MINUS:
-                    term.right[count].operator = SUB;
+                    rhs.operator = SUB;
                 default:
-                    return ParsingError.INVALID?;
+                    term.free();
+                    return ParsingError.TERM_FAIL?;
             }
-            if (try factor = parseFactor(tokens, currentPtr))
+            Factor*! factor = parseFactor(tokens, currentPtr);
+            if (catch excuse = factor)
             {
-                term.right[count].right = factor;
-                count++;
+                term.free();
+                return excuse?;
             }
-            else
-            {
-                return ParsingError.INVALID?;
-            }
+            rhs.right = factor;
+            term.right.push(rhs);
         }
         return term;
     }
     mem::free(term);
-    return ParsingError.INVALID?;
+    return ParsingError.TERM_FAIL?;
 }
 <*
  @require self != null : "term is null"
@@ -522,11 +535,14 @@ fn String Grouping.toString(Grouping* self) @dynamic
 {
     DString result;
     result.new_init();
+    defer result.free();
+
     result.append("(");
     result.append(self.expr.toString());
     result.append(")");
+
     String str = result.tcopy_str();
-    result.free();
+
     return str;
 }
 <*
@@ -534,13 +550,22 @@ fn String Grouping.toString(Grouping* self) @dynamic
  *>
 fn Grouping*! parseGrouping(TokenList tokens, int* currentPtr)
 {
-    if (try left_paren = consume(tokens, currentPtr, LEFT_PAREN) && try term = parseTerm(tokens, currentPtr) && try right_paren = consume(tokens, currentPtr, RIGHT_PAREN))
+    Token! leftParen = consume(tokens, currentPtr, LEFT_PAREN);
+    if (catch excuse = leftParen) return ParsingError.GROUPING_FAIL?;
+
+    Term*! term = parseTerm(tokens, currentPtr);
+    if (catch excuse = term) return excuse?;
+
+    Token! rightParen = consume(tokens, currentPtr, RIGHT_PAREN);
+    if (catch excuse = rightParen)
     {
-        Grouping* grouping = mem::new(Grouping);
-        grouping.expr = term;
-        return grouping;
+        term.free();
+        return ParsingError.GROUPING_FAIL?;
     }
-    return ParsingError.INVALID?;
+    
+    Grouping* grouping = mem::new(Grouping);
+    grouping.expr = term;
+    return grouping;
 }
 <*
  @require self != null : "grouping is null"
