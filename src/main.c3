@@ -10,6 +10,7 @@ fn int main(String[] args)
 {
     Interpreter interpreter;
     interpreter.new_init();
+	defer interpreter.free();
 
     interpreter.add_function("sin", &sin);
     interpreter.add_function("cos", &cos);
@@ -42,15 +43,13 @@ fn int main(String[] args)
     interpreter.add_function("sqrt", &sqrt);
     interpreter.add_function("cbrt", &cbrt);
 
-    if (try result = interpreter.evaluate(args[1]))
+	double! result = interpreter.evaluate(args[1]);
+    if (catch excuse = result)
     {
-        io::printfn("%s = %f", interpreter.format(args[1])!!, result);
+        io::eprintfn("ERROR: %s", excuse);
+		return -1;
     }
-    else
-    {
-        io::printn("ERROR!!!!");
-    }
-
+	io::printfn("%s = %f", interpreter.format(args[1])!!, result);
 	return 0;
 }
 
