@@ -21,6 +21,19 @@ fn void Interpreter.add_function(Interpreter* self, String name, FunctionDefinit
 {
     self.functions.set(name, function);
 }
+fn String! Interpreter.format(Interpreter* self, String calculation)
+{
+    TokenList tokens = tokenizer::tokenize(calculation);
+    defer tokens.free();
+
+    Expression*! expression = parser::parseExpression(tokens);
+    if (catch excuse = expression)
+    {
+        return excuse?;
+    }
+    defer expression.free();
+    return expression.toString();
+}
 fn double! Interpreter.evaluate(Interpreter* self, String calculation)
 {
     TokenList tokens = tokenizer::tokenize(calculation);
@@ -32,7 +45,7 @@ fn double! Interpreter.evaluate(Interpreter* self, String calculation)
         return excuse?;
     }
     defer expression.free();
-    return expression.evaluate();
+    return expression.evaluate(self.functions);
 }
 fn void Interpreter.free(Interpreter* self)
 {
@@ -41,75 +54,77 @@ fn void Interpreter.free(Interpreter* self)
 
 interface ParsingExpression
 {
-    fn double evaluate();
+    fn double evaluate(FunctionTable functions);
 }
 
 <*
  @require self != null : "expression is null"
  *>
-fn double Expression.evaluate(Expression* self) @dynamic
+fn double Expression.evaluate(Expression* self, FunctionTable functions) @dynamic
 {
-    return self.expr.evaluate();
+    return self.expr.evaluate(functions);
 }
 <*
  @require self != null : "primary is null"
  *>
-fn double Primary.evaluate(Primary* self) @dynamic
+fn double Primary.evaluate(Primary* self, FunctionTable functions) @dynamic
 {
     switch (self.value.type)
     {
         case String.typeid:
             return (*(String*)self.value).to_double()!!;
         case Grouping.typeid:
-            return ((Grouping*)self.value).evaluate();
+            return ((Grouping*)self.value).evaluate(functions);
     }
     return 999.99999;
 }
 <*
  @require self != null : "function is null"
  *>
-fn double Function.evaluate(Function* self) @dynamic
+fn double Function.evaluate(Function* self, FunctionTable functions) @dynamic
 {
-    // @todo: evaluate actual function
-    return self.primary.evaluate();
+    double x = self.primary.evaluate(functions);
+    if (*self.func == "") return x;
+    if (try function = functions[*self.func]) return function(x);
+    return 999.99999;
 }
 <*
  @require self != null : "exponent is null"
  *>
-fn double Exponent.evaluate(Exponent* self) @dynamic
+fn double Exponent.evaluate(Exponent* self, FunctionTable functions) @dynamic
 {
 	if (self.valueList.len() == 0) return 999.99999;
 
-	double result = self.valueList[^1].evaluate();
+	double result = self.valueList[^1].evaluate(functions);
 	for (int i = (int)self.valueList.len() - 1 - 1; i >= 0; i--)
 	{
-		result = math::pow(self.valueList[i].evaluate(), result);
+		result = math::pow(self.valueList[i].evaluate(functions), result);
 	}
 	return result;
 }
 <*
  @require self != null : "unary is null"
  *>
-fn double Unary.evaluate(Unary* self) @dynamic
+fn double Unary.evaluate(Unary* self, FunctionTable functions) @dynamic
 {
     switch (self.operator)
     {
         case NONE:
-            return self.exponent.evaluate();
+            return self.exponent.evaluate(functions);
         case MINUS:
-            return -1 * self.exponent.evaluate();
+            return -1 * self.exponent.evaluate(functions);
     }
 }
 <*
  @require self != null : "factor is null"
  *>
-fn double Factor.evaluate(Factor* self) @dynamic
+fn double Factor.evaluate(Factor* self, FunctionTable functions) @dynamic
 {
-    double result = self.left.evaluate();
+    double result = self.left.evaluate(functions);
     double unaryEval;
     foreach (idx, unaryRHS : self.right)
     {
-        unaryEval = unaryRHS.right.evaluate();
+        unaryEval = unaryRHS.right.evaluate(functions);
         switch (unaryRHS.operator)
         {
             case MUL:
@@ -123,9 +138,9 @@ fn double Factor.evaluate(Factor* self) @dynamic
 <*
  @require self != null : "term is null"
  *>
-fn double Term.evaluate(Term* self) @dynamic
+fn double Term.evaluate(Term* self, FunctionTable functions) @dynamic
 {
-    double result = self.left.evaluate();
+    double result = self.left.evaluate(functions);
     double factorEval;
     foreach (idx, factorRHS : self.right)
     {
@@ -136,7 +151,7 @@ fn double Term.evaluate(Term* self) @dynamic
             case SUB:
                 factorEval = -1;
         }
-        factorEval *= factorRHS.right.evaluate();
+        factorEval *= factorRHS.right.evaluate(functions);
         result += factorEval;
     }
     return result;
@@ -144,7 +159,7 @@ fn double Term.evaluate(Term* self) @dynamic
 <*
  @require self != null : "grouping is null"
  *>
-fn double Grouping.evaluate(Grouping* self) @dynamic
+fn double Grouping.evaluate(Grouping* self, FunctionTable functions) @dynamic
 {
-    return self.expr.evaluate();
+    return self.expr.evaluate(functions);
 }

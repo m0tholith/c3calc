@@ -57,7 +57,6 @@ fn Token! peek(TokenList tokens, int* current)
 interface ParsingExpression
 {
     fn String toString();
-    fn double evaluate();
     fn void free();
 }
 

@@ -12,7 +12,7 @@ fn int main(String[] args)
 
     if (try result = interpreter.evaluate(args[1]))
     {
-        io::printn(result);
+        io::printfn("%s = %f", interpreter.format(args[1])!!, result);
     }
     else
     {
