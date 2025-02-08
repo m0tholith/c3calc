@@ -147,7 +147,7 @@ fn List(<Token>) tokenize(String expression)
 				else if (isLetter(current))
 				{
 					int letterStart = position;
-					while (isLetter(current))
+					while (isLetter(current) | isDigit(current))
 					{
 						position++;
 						if (position >= expression.len) break;
