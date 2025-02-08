@@ -92,7 +92,7 @@ fn String Expression.toString(Expression* self) @dynamic
 fn void Expression.free(Expression* self) @dynamic
 {
     self.expr.free();
-    free(self);
+    mem::free(self);
 }
 
 struct Primary (ParsingExpression)
@@ -495,7 +495,7 @@ fn Term*! parseTerm(TokenList tokens, int* currentPtr)
         }
         return term;
     }
-    free(term);
+    mem::free(term);
     return ParsingError.INVALID?;
 }
 <*
@@ -504,9 +504,9 @@ fn Term*! parseTerm(TokenList tokens, int* currentPtr)
 fn void Term.free(Term* self) @dynamic
 {
     self.left.free();
-    foreach (idx, &factorRHS : self.right)
+    foreach (idx, &termRHS : self.right)
     {
-        factorRHS.right.free();
+        termRHS.right.free();
     }
     self.right.free();
     mem::free(self);
