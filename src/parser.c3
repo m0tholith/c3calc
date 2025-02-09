@@ -19,6 +19,7 @@ fault ParsingError
     TERM_INVALID_OPERATOR,
     GROUPING_NO_LEFTPAREN,
     GROUPING_NO_RIGHTPAREN,
+    VARIABLE_NO_VAR_NAME,
 }
 <*
  @require current != null : "current ptr is null"
@@ -578,5 +579,40 @@ fn Grouping*! parseGrouping(TokenList tokens, int* currentPtr)
 fn void Grouping.free(Grouping* self) @dynamic
 {
     self.expr.free();
+    mem::free(self);
+}
+
+struct Variable (ParsingExpression)
+{
+    String* name;
+}
+<*
+ @require self != null : "variable is null"
+ @require self.name != null : "variable name is uninitialized"
+ *>
+fn String Variable.toString(Variable* self) @dynamic
+{
+    if (*self.name == "") io::eprintf("ERROR: variable name is empty");
+    return *self.name;
+}
+<*
+ @require currentPtr != null : "current is null"
+ *>
+fn Variable*! parseVariable(TokenList tokens, int* currentPtr)
+{
+    if (try varName = consume(tokens, currentPtr, WORD))
+    {
+        Variable* variable = mem::new(Variable);
+        variable.name = @clone(varName.content.copy());
+        return variable;
+    }
+    return ParsingError.VARIABLE_NO_VAR_NAME?;
+}
+<*
+ @require self != null : "variable is null"
+ *>
+fn void Variable.free(Variable* self) @dynamic
+{
+    if (self.name != null) mem::free(self.name);
     mem::free(self);
 }

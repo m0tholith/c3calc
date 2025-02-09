@@ -8,18 +8,25 @@ import std::collections::map;
 
 def FunctionDefinition = fn double(double x);
 def FunctionTable = HashMap(<String, FunctionDefinition>);
+def VariableTable = HashMap(<String, double>);
 
 struct Interpreter
 {
     FunctionTable functions;
+    VariableTable variables;
 }
 fn void Interpreter.new_init(Interpreter* self)
 {
     self.functions.new_init();
+    self.variables.new_init();
 }
 fn void Interpreter.add_function(Interpreter* self, String name, FunctionDefinition function)
 {
     self.functions.set(name, function);
+}
+fn void Interpreter.add_variable(Interpreter* self, String name, double variable)
+{
+    self.variables.set(name, variable);
 }
 fn String! Interpreter.format(Interpreter* self, String calculation)
 {
@@ -162,4 +169,12 @@ fn double Term.evaluate(Term* self, Interpreter* interpreter) @dynamic
 fn double Grouping.evaluate(Grouping* self, Interpreter* interpreter) @dynamic
 {
     return self.expr.evaluate(interpreter);
+}
+<*
+ @require self != null : "variable is null"
+ *>
+fn double Variable.evaluate(Variable* self, Interpreter* interpreter) @dynamic
+{
+    if (try variable = interpreter.variables[*self.name]) return variable;
+    return 999.99999;
 }
