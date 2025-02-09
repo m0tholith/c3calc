@@ -23,6 +23,7 @@ enum TokenType : (inline int value, String name)
 
 	// misc
 	UNKNOWN		 = { 1 << 13, "UNKNOWN" },
+	EOF		     = { 1 << 14, "EOF" },
 }
 
 struct Token
@@ -149,6 +150,11 @@ fn List(<Token>) tokenize(String expression)
                 tokens.push(variable);
                 break;
 
+            case '\n':
+            case ';':
+                tokens.push(Token { ";", EOF, position });
+                position++;
+
             default:
                 // numbers
                 if (isDigit(current))
@@ -188,6 +194,8 @@ fn List(<Token>) tokenize(String expression)
 				tokens.push(unknown);
         }
     }
+
+	if (tokens[^1].type != EOF) tokens.push(Token { ";", EOF, (int)tokens.len() });
 
     return tokens;
 }

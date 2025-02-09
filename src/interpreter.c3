@@ -42,6 +42,9 @@ fn String! Interpreter.format(Interpreter* self, String calculation)
     defer expression.free();
     return expression.toString();
 }
+<*
+ Evaluate a single calculation.
+ *>
 fn double! Interpreter.evaluate(Interpreter* self, String calculation)
 {
     TokenList tokens = tokenizer::tokenize(calculation);
@@ -54,6 +57,68 @@ fn double! Interpreter.evaluate(Interpreter* self, String calculation)
     }
     defer expression.free();
     return expression.evaluate(self);
+}
+<*
+ Evaluate more than one calculation in the same string.
+ *>
+fn String! Interpreter.execute(Interpreter* self, String calculation)
+{
+    TokenList tokens = tokenizer::tokenize(calculation);
+    defer tokens.free();
+
+	bool has_eof = false;
+	foreach (token : tokens)
+	{
+		if (token.type == EOF) has_eof = true;
+	}
+	if (!has_eof)
+	{
+		DString result;
+		result.new_init();
+		defer result.free();
+
+		Expression*! expression = parser::parseExpression(tokens);
+		if (catch excuse = expression)
+		{
+			return excuse?;
+		}
+		defer expression.free();
+		
+		result.appendf("%f", expression.evaluate(self));
+
+		return result.tcopy_str();
+	}
+
+	DString result;
+	result.new_init();
+	defer result.free();
+	
+	int start = 0;
+	int end = 0;
+	for (; end < tokens.len(); end++)
+	{
+		if (tokens[end].type == EOF)
+		{
+			Token[] tokenArr = tokens.to_tarray()[start .. end - 1];
+			TokenList evalTokens;
+			evalTokens.new_init();
+			defer evalTokens.free();
+			evalTokens.add_array(tokenArr);
+			
+			Expression*! expression = parser::parseExpression(evalTokens);
+			if (catch excuse = expression)
+			{
+				return excuse?;
+			}
+			defer expression.free();
+
+			result.appendfn("%s -> %f", expression.toString(), expression.evaluate(self));
+
+			start = end + 1;
+		}
+	}
+
+	return result.tcopy_str();
 }
 fn void Interpreter.free(Interpreter* self)
 {

@@ -43,21 +43,13 @@ fn int main(String[] args)
     interpreter.add_function("sqrt", &sqrt);
     interpreter.add_function("cbrt", &cbrt);
 
-	double! result = interpreter.evaluate(args[1]);
+	String! result = interpreter.execute(args[1]);
     if (catch excuse = result)
     {
         io::eprintfn("ERROR: %s", excuse);
 		return -1;
     }
-	io::printfn("%f", result);
-
-	double! result2 = interpreter.evaluate(args[2]);
-    if (catch excuse = result2)
-    {
-        io::eprintfn("ERROR: %s", excuse);
-		return -1;
-    }
-	io::printfn("%f", result2);
+	io::printn(result);
 
 	return 0;
 }

@@ -2,7 +2,7 @@
 <digits>		::= ( "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" )+
 <word>			::= ( "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "g" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" | <digits> )+
 
-<expression>	::= <term> | <assignment>
+<expression>	::= ( ( <term> | <assignment> ) [ <eof> ] )+
 
 <primary>		::= <number> | <grouping> | <variable>
 <function>		::= [ <word> ] <primary>
@@ -10,8 +10,9 @@
 <unary>			::= [ "-" ] ( <exponent> )
 <factor>		::= <unary> { ( "*" | "/" ) <unary> }
 <term>			::= <factor> { ( "+" | "-" ) <factor> }
+<grouping>		::= "(" <term> ")"
 
 <variable>		::= <word>
 <assignment>	::= <variable> "=" <term>
 
-<grouping>		::= "(" <term> ")"
+<eof> = ';' | '\n'
