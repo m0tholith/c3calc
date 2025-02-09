@@ -190,8 +190,15 @@ fn String Function.toString(Function* self) @dynamic
     result.new_init();
     defer result.free();
 
-    result.appendf("%s%s", *self.func, self.primary.toString());
-
+    if (*self.func == "" || self.primary.value.type == Grouping.typeid)
+    {
+        result.appendf("%s%s", *self.func, self.primary.toString());
+    }
+    else
+    {
+        result.appendf("%s %s", *self.func, self.primary.toString());
+    }
+    
     String str = result.tcopy_str();
     return str;
 }
