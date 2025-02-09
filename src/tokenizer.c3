@@ -14,13 +14,14 @@ enum TokenType : (inline int value, String name)
     SLASH        = { 1 << 6, "SLASH" },
     STAR         = { 1 << 7, "STAR" },
     CARET        = { 1 << 8, "CARET" },
+    EQUAL        = { 1 << 9, "EQUAL" },
 
     // Literals.
-    NUMBER       = { 1 << 9, "NUMBER" },
-    WORD         = { 1 << 10, "WORD" },
+    NUMBER       = { 1 << 10, "NUMBER" },
+    WORD         = { 1 << 11, "WORD" },
 
 	// misc
-	UNKNOWN		 = { 1 << 11, "UNKNOWN" },
+	UNKNOWN		 = { 1 << 12, "UNKNOWN" },
 }
 
 struct Token
@@ -129,6 +130,9 @@ fn List(<Token>) tokenize(String expression)
                 position++;
             case '^':
                 tokens.push(Token { "^", CARET, position } );
+                position++;
+            case '=':
+                tokens.push(Token { "=", EQUAL, position } );
                 position++;
 
             default:

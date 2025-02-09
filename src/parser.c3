@@ -20,6 +20,7 @@ fault ParsingError
     GROUPING_NO_LEFTPAREN,
     GROUPING_NO_RIGHTPAREN,
     VARIABLE_NO_VAR_NAME,
+    ASSIGNMENT_INVALID_EXPR,
 }
 <*
  @require current != null : "current ptr is null"
@@ -68,19 +69,24 @@ interface ParsingExpression
 
 struct Expression (ParsingExpression)
 {
-    Term* expr;
+    any expr;
 }
 fn Expression*! parseExpression(TokenList tokens)
 {
     Expression* result = malloc(Expression.sizeof);
 
     int* current = mem::new(int);
-    Term*! expr = parseTerm(tokens, current);
-    free(current);
+    defer mem::free(current);
+    
+    if (try assignment = parseAssignment(tokens, current))
+    {
+        result.expr = assignment;
+        return result;
+    }
+    Term*! term = parseTerm(tokens, current);
+    if (catch excuse = term) return excuse?;
 
-    if (catch excuse = expr) return excuse?;
-
-    result.expr = expr;
+    result.expr = term;
     return result;
 }
 <*
@@ -88,14 +94,27 @@ fn Expression*! parseExpression(TokenList tokens)
  *>
 fn String Expression.toString(Expression* self) @dynamic
 {
-    return self.expr.toString();
+    switch (self.expr.type)
+	{
+		case Assignment.typeid:
+			return ((Assignment*)self.expr).toString();
+		case Term.typeid:
+			return ((Term*)self.expr).toString();
+	}
+	return "(ERROR!)";
 }
 <*
  @require self != null : "expression is null"
  *>
 fn void Expression.free(Expression* self) @dynamic
 {
-    self.expr.free();
+    switch (self.expr.type)
+	{
+		case Assignment.typeid:
+			((Assignment*)self.expr).free();
+		case Term.typeid:
+			((Term*)self.expr).free();
+	}
     mem::free(self);
 }
 
@@ -614,5 +633,58 @@ fn Variable*! parseVariable(TokenList tokens, int* currentPtr)
 fn void Variable.free(Variable* self) @dynamic
 {
     if (self.name != null) mem::free(self.name);
+    mem::free(self);
+}
+
+struct Assignment (ParsingExpression)
+{
+    Variable* variable;
+    Term* value;
+}
+<*
+ @require self != null : "assignment is null"
+ @require self.variable != null : "assignment's variable is uninitialized"
+ @require self.value != null : "assignment's term is uninitialized"
+ *>
+fn String Assignment.toString(Assignment* self) @dynamic
+{
+    DString result;
+    result.new_init();
+    defer result.free();
+
+    result.appendf("%s = %s", self.variable.toString(), self.value.toString());
+
+    String str = result.tcopy_str();
+    return str;
+}
+<*
+ @require currentPtr != null : "current is null"
+ *>
+fn Assignment*! parseAssignment(TokenList tokens, int* currentPtr)
+{
+    int prev = *currentPtr;
+    if (try variable = parseVariable(tokens, currentPtr) && try eq = consume(tokens, currentPtr, EQUAL))
+    {
+        Assignment* assignment = mem::new(Assignment);
+        assignment.variable = variable;
+        Term*! term = parseTerm(tokens, currentPtr);
+        if (catch excuse = term)
+        {
+            assignment.free();
+            return excuse?;
+        }
+        assignment.value = term;
+        return assignment;
+    }
+    *currentPtr = prev;
+    return ParsingError.ASSIGNMENT_INVALID_EXPR?;
+}
+<*
+ @require self != null : "assignment is null"
+ *>
+fn void Assignment.free(Assignment* self) @dynamic
+{
+    if (self.variable != null) self.variable.free();
+    if (self.value != null) self.value.free();
     mem::free(self);
 }

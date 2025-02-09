@@ -69,7 +69,14 @@ interface ParsingExpression
  *>
 fn double Expression.evaluate(Expression* self, Interpreter* interpreter) @dynamic
 {
-    return self.expr.evaluate(interpreter);
+    switch (self.expr.type)
+	{
+		case Assignment.typeid:
+			return ((Assignment*)self.expr).evaluate(interpreter);
+		case Term.typeid:
+			return ((Term*)self.expr).evaluate(interpreter);
+	}
+	return 999.99999;
 }
 <*
  @require self != null : "primary is null"
@@ -177,4 +184,13 @@ fn double Variable.evaluate(Variable* self, Interpreter* interpreter) @dynamic
 {
     if (try variable = interpreter.variables[*self.name]) return variable;
     return 999.99999;
+}
+<*
+ @require self != null : "assignment is null"
+ *>
+fn double Assignment.evaluate(Assignment* self, Interpreter* interpreter)
+{
+	double valueNumber = self.value.evaluate(interpreter);
+	interpreter.add_variable(*self.variable.name, valueNumber);
+	return valueNumber;
 }
