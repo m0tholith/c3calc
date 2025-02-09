@@ -210,7 +210,7 @@ fn Function*! parseFunction(TokenList tokens, int* currentPtr)
     Function* function = mem::new(Function);
     if (try word = consume(tokens, currentPtr, WORD))
     {
-        function.func = @clone(word.content);
+        function.func = @clone(word.content.copy());
     }
     else
     {
