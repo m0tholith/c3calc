@@ -14,14 +14,11 @@ fault TokenWalk
 }
 fault ParsingError
 {
-    INVALID,
-    PRIMARY_FAIL,
-    FUNCTION_FAIL,
-    EXPONENT_FAIL,
-    UNARY_FAIL,
-    FACTOR_FAIL,
-    TERM_FAIL,
-    GROUPING_FAIL,
+    PRIMARY_INVALID_TOKEN,
+    FACTOR_INVALID_OPERATOR,
+    TERM_INVALID_OPERATOR,
+    GROUPING_NO_LEFTPAREN,
+    GROUPING_NO_RIGHTPAREN,
 }
 <*
  @require current != null : "current ptr is null"
@@ -141,7 +138,7 @@ fn Primary*! parsePrimary(TokenList tokens, int* currentPtr)
         return primary;
     }
     mem::free(primary);
-    return ParsingError.PRIMARY_FAIL?;
+    return ParsingError.PRIMARY_INVALID_TOKEN?;
 }
 <*
  @require self != null : "primary is null"
@@ -192,13 +189,14 @@ fn Function*! parseFunction(TokenList tokens, int* currentPtr)
     {
         function.func = mem::new(String, "");
     }
-    if (try primary = parsePrimary(tokens, currentPtr))
+    Primary*! primary = parsePrimary(tokens, currentPtr);
+    if (catch excuse = primary)
     {
-        function.primary = primary;
-        return function;
+        function.free();
+        return excuse?;
     }
-    function.free();
-    return ParsingError.FUNCTION_FAIL?;
+    function.primary = primary;
+    return function;
 }
 <*
  @require self != null : "function is null"
@@ -241,18 +239,23 @@ fn Exponent*! parseExponent(TokenList tokens, int* currentPtr)
 {
 	Exponent* exponent = mem::new(Exponent);
 	exponent.valueList.new_init();
-	while (try function = parseFunction(tokens, currentPtr))
-	{
-		exponent.valueList.push(function);
-		if (catch nonExponent = consume(tokens, currentPtr, CARET))
-		{
-			break;
-		}
-	}
-    if (exponent.valueList.len() == 0)
+    Function*! functionL = parseFunction(tokens, currentPtr);
+    if (catch excuse = functionL)
     {
-        return ParsingError.EXPONENT_FAIL?;
+        exponent.valueList.free();
+        mem::free(exponent);
+        return excuse?;
     }
+    exponent.valueList.push(functionL);
+	while (try exponentToken = consume(tokens, currentPtr, CARET))
+	{
+        Function*! function = parseFunction(tokens, currentPtr);
+		if (catch excuse = function)
+		{
+            return excuse?;
+		}
+		exponent.valueList.push(function);
+	}
 	return exponent;
 }
 <*
@@ -374,41 +377,42 @@ fn String Factor.toString(Factor* self) @dynamic
 fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
 {
     Factor* factor = mem::new(Factor);
-    if (try unaryL = parseUnary(tokens, currentPtr))
+    Unary*! unaryL = parseUnary(tokens, currentPtr);
+    if (catch excuse = unaryL)
     {
-        factor.right.new_init();
-        factor.left = unaryL;
-        int count;
-        while (true)
-        {
-            Token! op = consume(tokens, currentPtr, STAR);
-            if (catch excuse = op) op = consume(tokens, currentPtr, SLASH);
-            if (catch excuse = op) break;
-
-            FactorRHS rhs = {};
-            switch (op.type)
-            {
-                case STAR:
-                    rhs.operator = MUL;
-                case SLASH:
-                    rhs.operator = DIV;
-                default:
-                    factor.free();
-                    return ParsingError.FACTOR_FAIL?;
-            }
-            Unary*! unary = parseUnary(tokens, currentPtr);
-            if (catch excuse = unary)
-            {
-                factor.free();
-                return excuse?;
-            }
-            rhs.right = unary;
-            factor.right.push(rhs);
-        }
-        return factor;
+        mem::free(factor);
+        return excuse?;
     }
-    mem::free(factor);
-    return ParsingError.FACTOR_FAIL?;
+    factor.right.new_init();
+    factor.left = unaryL;
+    int count;
+    while (true)
+    {
+        Token! op = consume(tokens, currentPtr, STAR);
+        if (catch excuse = op) op = consume(tokens, currentPtr, SLASH);
+        if (catch excuse = op) break;
+
+        FactorRHS rhs = {};
+        switch (op.type)
+        {
+            case STAR:
+                rhs.operator = MUL;
+            case SLASH:
+                rhs.operator = DIV;
+            default:
+                factor.free();
+                return ParsingError.FACTOR_INVALID_OPERATOR?;
+        }
+        Unary*! unary = parseUnary(tokens, currentPtr);
+        if (catch excuse = unary)
+        {
+            factor.free();
+            return excuse?;
+        }
+        rhs.right = unary;
+        factor.right.push(rhs);
+    }
+    return factor;
 }
 <*
  @require self != null : "factor is null"
@@ -474,41 +478,42 @@ fn String Term.toString(Term* self) @dynamic
 fn Term*! parseTerm(TokenList tokens, int* currentPtr)
 {
     Term* term = mem::new(Term);
-    if (try factorL = parseFactor(tokens, currentPtr))
+    Factor*! factorL = parseFactor(tokens, currentPtr);
+    if (catch excuse = factorL)
     {
-        term.right.new_init();
-        term.left = factorL;
-        int count;
-        while (true)
-        {
-            Token! op = consume(tokens, currentPtr, PLUS);
-            if (catch excuse = op) op = consume(tokens, currentPtr, MINUS);
-            if (catch excuse = op) break;
-
-            TermRHS rhs = {};
-            switch (op.type)
-            {
-                case PLUS:
-                    rhs.operator = ADD;
-                case MINUS:
-                    rhs.operator = SUB;
-                default:
-                    term.free();
-                    return ParsingError.TERM_FAIL?;
-            }
-            Factor*! factor = parseFactor(tokens, currentPtr);
-            if (catch excuse = factor)
-            {
-                term.free();
-                return excuse?;
-            }
-            rhs.right = factor;
-            term.right.push(rhs);
-        }
-        return term;
+        mem::free(term);
+        return excuse?;
     }
-    mem::free(term);
-    return ParsingError.TERM_FAIL?;
+    term.right.new_init();
+    term.left = factorL;
+    int count;
+    while (true)
+    {
+        Token! op = consume(tokens, currentPtr, PLUS);
+        if (catch excuse = op) op = consume(tokens, currentPtr, MINUS);
+        if (catch excuse = op) break;
+
+        TermRHS rhs = {};
+        switch (op.type)
+        {
+            case PLUS:
+                rhs.operator = ADD;
+            case MINUS:
+                rhs.operator = SUB;
+            default:
+                term.free();
+                return ParsingError.TERM_INVALID_OPERATOR?;
+        }
+        Factor*! factor = parseFactor(tokens, currentPtr);
+        if (catch excuse = factor)
+        {
+            term.free();
+            return excuse?;
+        }
+        rhs.right = factor;
+        term.right.push(rhs);
+    }
+    return term;
 }
 <*
  @require self != null : "term is null"
@@ -551,7 +556,7 @@ fn String Grouping.toString(Grouping* self) @dynamic
 fn Grouping*! parseGrouping(TokenList tokens, int* currentPtr)
 {
     Token! leftParen = consume(tokens, currentPtr, LEFT_PAREN);
-    if (catch excuse = leftParen) return ParsingError.GROUPING_FAIL?;
+    if (catch excuse = leftParen) return ParsingError.GROUPING_NO_LEFTPAREN?;
 
     Term*! term = parseTerm(tokens, currentPtr);
     if (catch excuse = term) return excuse?;
@@ -560,7 +565,7 @@ fn Grouping*! parseGrouping(TokenList tokens, int* currentPtr)
     if (catch excuse = rightParen)
     {
         term.free();
-        return ParsingError.GROUPING_FAIL?;
+        return ParsingError.GROUPING_NO_RIGHTPAREN?;
     }
     
     Grouping* grouping = mem::new(Grouping);
