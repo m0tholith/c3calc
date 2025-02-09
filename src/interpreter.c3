@@ -2,6 +2,7 @@ module interpreter;
 
 import tokenizer;
 import parser;
+import std::io;
 import std::math;
 import std::collections::map;
 
@@ -89,6 +90,8 @@ fn double Primary.evaluate(Primary* self, Interpreter* interpreter) @dynamic
             return (*(String*)self.value).to_double()!!;
         case Grouping.typeid:
             return ((Grouping*)self.value).evaluate(interpreter);
+        case Variable.typeid:
+            return ((Variable*)self.value).evaluate(interpreter);
     }
     return 999.99999;
 }
@@ -183,6 +186,7 @@ fn double Grouping.evaluate(Grouping* self, Interpreter* interpreter) @dynamic
 fn double Variable.evaluate(Variable* self, Interpreter* interpreter) @dynamic
 {
     if (try variable = interpreter.variables[*self.name]) return variable;
+	io::eprintfn("couldnt find variable %s", *self.name);
     return 999.99999;
 }
 <*

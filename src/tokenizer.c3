@@ -19,9 +19,10 @@ enum TokenType : (inline int value, String name)
     // Literals.
     NUMBER       = { 1 << 10, "NUMBER" },
     WORD         = { 1 << 11, "WORD" },
+    VARIABLE     = { 1 << 12, "VARIABLE" },
 
 	// misc
-	UNKNOWN		 = { 1 << 12, "UNKNOWN" },
+	UNKNOWN		 = { 1 << 13, "UNKNOWN" },
 }
 
 struct Token
@@ -134,6 +135,19 @@ fn List(<Token>) tokenize(String expression)
             case '=':
                 tokens.push(Token { "=", EQUAL, position } );
                 position++;
+
+            // variables
+            case '_':
+                int letterStart = position;
+                while (isLetter(current) || current == '_')
+                {
+                    position++;
+                    if (position >= expression.len) break;
+                    current = expression[position];
+                }
+                Token variable = { expression[letterStart .. position - 1], VARIABLE, letterStart };
+                tokens.push(variable);
+                break;
 
             default:
                 // numbers

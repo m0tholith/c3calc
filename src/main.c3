@@ -49,7 +49,16 @@ fn int main(String[] args)
         io::eprintfn("ERROR: %s", excuse);
 		return -1;
     }
-	io::printfn("%s = %f", interpreter.format(args[1])!!, result);
+	io::printfn("%f", result);
+
+	double! result2 = interpreter.evaluate(args[2]);
+    if (catch excuse = result2)
+    {
+        io::eprintfn("ERROR: %s", excuse);
+		return -1;
+    }
+	io::printfn("%f", result2);
+
 	return 0;
 }
 

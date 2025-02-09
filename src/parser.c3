@@ -73,19 +73,26 @@ struct Expression (ParsingExpression)
 }
 fn Expression*! parseExpression(TokenList tokens)
 {
-    Expression* result = malloc(Expression.sizeof);
+    Expression* result = mem::new(Expression);
 
     int* current = mem::new(int);
     defer mem::free(current);
-    
-    if (try assignment = parseAssignment(tokens, current))
+
+    if (tokens[1].type == EQUAL)
     {
+        Assignment*! assignment = parseAssignment(tokens, current);
+        if (catch excuse = assignment)
+        {
+            return excuse?;
+        }
         result.expr = assignment;
         return result;
     }
     Term*! term = parseTerm(tokens, current);
-    if (catch excuse = term) return excuse?;
-
+    if (catch excuse = term)
+    {
+        return excuse?;
+    }
     result.expr = term;
     return result;
 }
@@ -120,9 +127,10 @@ fn void Expression.free(Expression* self) @dynamic
 
 struct Primary (ParsingExpression)
 {
-    // two options:
+    // three options:
     //  - String* number
     //  - Grouping* grouping
+    //  - Variable* variable
     any value;
 }
 <*
@@ -136,6 +144,8 @@ fn String Primary.toString(Primary* self) @dynamic
             return *(String*)self.value;
         case Grouping.typeid:
             return ((Grouping*)self.value).toString();
+        case Variable.typeid:
+            return ((Variable*)self.value).toString();
         default:
             io::eprintf("Could not convert primary to string: invalid value type");
     }
@@ -146,15 +156,23 @@ fn String Primary.toString(Primary* self) @dynamic
  *>
 fn Primary*! parsePrimary(TokenList tokens, int* currentPtr)
 {
+    int prev = *currentPtr;
     Primary* primary = mem::new(Primary);
     if (try number = consume(tokens, currentPtr, NUMBER))
     {
         primary.value = @clone(number.content.copy());
         return primary;
     }
-    else if (try grouping = parseGrouping(tokens, currentPtr))
+    *currentPtr = prev;
+    if (try grouping = parseGrouping(tokens, currentPtr))
     {
         primary.value = grouping;
+        return primary;
+    }
+    *currentPtr = prev;
+    if (try variable = parseVariable(tokens, currentPtr))
+    {
+        primary.value = variable;
         return primary;
     }
     mem::free(primary);
@@ -172,6 +190,8 @@ fn void Primary.free(Primary* self) @dynamic
             free(self.value);
         case Grouping.typeid:
             ((Grouping*)self.value).free();
+        case Variable.typeid:
+            ((Variable*)self.value).free();
     }
     mem::free(self);
 }
@@ -207,10 +227,11 @@ fn String Function.toString(Function* self) @dynamic
  *>
 fn Function*! parseFunction(TokenList tokens, int* currentPtr)
 {
+    int prev = *currentPtr;
     Function* function = mem::new(Function);
     if (try word = consume(tokens, currentPtr, WORD))
     {
-        function.func = @clone(word.content.copy());
+        function.func = @clone(word.content);
     }
     else
     {
@@ -219,6 +240,7 @@ fn Function*! parseFunction(TokenList tokens, int* currentPtr)
     Primary*! primary = parsePrimary(tokens, currentPtr);
     if (catch excuse = primary)
     {
+        *currentPtr = prev;
         function.free();
         return excuse?;
     }
@@ -264,13 +286,15 @@ fn String Exponent.toString(Exponent* self) @dynamic
  *>
 fn Exponent*! parseExponent(TokenList tokens, int* currentPtr)
 {
+    int prev = *currentPtr;
+    
 	Exponent* exponent = mem::new(Exponent);
 	exponent.valueList.new_init();
     Function*! functionL = parseFunction(tokens, currentPtr);
     if (catch excuse = functionL)
     {
-        exponent.valueList.free();
-        mem::free(exponent);
+        *currentPtr = prev;
+        exponent.free();
         return excuse?;
     }
     exponent.valueList.push(functionL);
@@ -279,6 +303,8 @@ fn Exponent*! parseExponent(TokenList tokens, int* currentPtr)
         Function*! function = parseFunction(tokens, currentPtr);
 		if (catch excuse = function)
 		{
+            *currentPtr = prev;
+            exponent.free();
             return excuse?;
 		}
 		exponent.valueList.push(function);
@@ -335,6 +361,8 @@ fn String Unary.toString(Unary* self) @dynamic
  *>
 fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
 {
+    int prev = *currentPtr;
+    
     Unary* unary = mem::new(Unary);
     if (try op = consume(tokens, currentPtr, MINUS))
     {
@@ -343,6 +371,7 @@ fn Unary*! parseUnary(TokenList tokens, int* currentPtr)
     Exponent*! p = parseExponent(tokens, currentPtr);
     if (catch excuse = p)
     {
+        *currentPtr = prev;
         mem::free(unary);
         return excuse?;
     }
@@ -403,6 +432,8 @@ fn String Factor.toString(Factor* self) @dynamic
  *>
 fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
 {
+    int prev = *currentPtr;
+    
     Factor* factor = mem::new(Factor);
     Unary*! unaryL = parseUnary(tokens, currentPtr);
     if (catch excuse = unaryL)
@@ -427,12 +458,14 @@ fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
             case SLASH:
                 rhs.operator = DIV;
             default:
+                *currentPtr = prev;
                 factor.free();
                 return ParsingError.FACTOR_INVALID_OPERATOR?;
         }
         Unary*! unary = parseUnary(tokens, currentPtr);
         if (catch excuse = unary)
         {
+            *currentPtr = prev;
             factor.free();
             return excuse?;
         }
@@ -504,10 +537,13 @@ fn String Term.toString(Term* self) @dynamic
  *>
 fn Term*! parseTerm(TokenList tokens, int* currentPtr)
 {
+    int prev = *currentPtr;
+
     Term* term = mem::new(Term);
     Factor*! factorL = parseFactor(tokens, currentPtr);
     if (catch excuse = factorL)
     {
+        *currentPtr = prev;
         mem::free(term);
         return excuse?;
     }
@@ -528,12 +564,14 @@ fn Term*! parseTerm(TokenList tokens, int* currentPtr)
             case MINUS:
                 rhs.operator = SUB;
             default:
+                *currentPtr = prev;
                 term.free();
                 return ParsingError.TERM_INVALID_OPERATOR?;
         }
         Factor*! factor = parseFactor(tokens, currentPtr);
         if (catch excuse = factor)
         {
+            *currentPtr = prev;
             term.free();
             return excuse?;
         }
@@ -582,15 +620,26 @@ fn String Grouping.toString(Grouping* self) @dynamic
  *>
 fn Grouping*! parseGrouping(TokenList tokens, int* currentPtr)
 {
+    int prev = *currentPtr;
+
     Token! leftParen = consume(tokens, currentPtr, LEFT_PAREN);
-    if (catch excuse = leftParen) return ParsingError.GROUPING_NO_LEFTPAREN?;
+    if (catch excuse = leftParen) 
+    {
+        *currentPtr = prev;
+        return ParsingError.GROUPING_NO_LEFTPAREN?;
+    }
 
     Term*! term = parseTerm(tokens, currentPtr);
-    if (catch excuse = term) return excuse?;
+    if (catch excuse = term)
+    {
+        *currentPtr = prev;
+        return excuse?;
+    }
 
     Token! rightParen = consume(tokens, currentPtr, RIGHT_PAREN);
     if (catch excuse = rightParen)
     {
+        *currentPtr = prev;
         term.free();
         return ParsingError.GROUPING_NO_RIGHTPAREN?;
     }
@@ -626,7 +675,7 @@ fn String Variable.toString(Variable* self) @dynamic
  *>
 fn Variable*! parseVariable(TokenList tokens, int* currentPtr)
 {
-    if (try varName = consume(tokens, currentPtr, WORD))
+    if (try varName = consume(tokens, currentPtr, VARIABLE))
     {
         Variable* variable = mem::new(Variable);
         variable.name = @clone(varName.content.copy());
@@ -670,13 +719,20 @@ fn String Assignment.toString(Assignment* self) @dynamic
 fn Assignment*! parseAssignment(TokenList tokens, int* currentPtr)
 {
     int prev = *currentPtr;
-    if (try variable = parseVariable(tokens, currentPtr) && try eq = consume(tokens, currentPtr, EQUAL))
+    if (try variable = parseVariable(tokens, currentPtr))
     {
         Assignment* assignment = mem::new(Assignment);
         assignment.variable = variable;
+        if (catch excuse = consume(tokens, currentPtr, EQUAL))
+        {
+            *currentPtr = prev;
+            assignment.free();
+            return ParsingError.ASSIGNMENT_INVALID_EXPR?;
+        }
         Term*! term = parseTerm(tokens, currentPtr);
         if (catch excuse = term)
         {
+            *currentPtr = prev;
             assignment.free();
             return excuse?;
         }

@@ -4,7 +4,7 @@
 
 <expression>	::= <term> | <assignment>
 
-<primary>		::= <number> | <grouping>
+<primary>		::= <number> | <grouping> | <variable>
 <function>		::= [ <word> ] <primary>
 <exponent>		::= <function> { "^" <function> }
 <unary>			::= [ "-" ] ( <exponent> )
@@ -12,6 +12,6 @@
 <term>			::= <factor> { ( "+" | "-" ) <factor> }
 
 <variable>		::= <word>
-<assignment>	::= <variable> "=" <expression>
+<assignment>	::= <variable> "=" <term>
 
 <grouping>		::= "(" <term> ")"
