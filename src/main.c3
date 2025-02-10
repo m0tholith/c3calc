@@ -114,4 +114,4 @@ fn double log10 (double x) { return math::log10(x); }
 fn double log2  (double x) { return math::log2(x); }
 
 fn double sqrt  (double x) { return math::sqrt(x); }
-fn double cbrt  (double x) { return math::pow(x, 0.33333333333333333); }
+fn double cbrt  (double x) { return math::pow(x, 1.0 / 3.0); }
