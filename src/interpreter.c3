@@ -123,6 +123,7 @@ fn String! Interpreter.execute(Interpreter* self, String calculation)
 fn void Interpreter.free(Interpreter* self)
 {
     self.functions.free();
+    self.variables.free();
 }
 
 interface ParsingExpression
