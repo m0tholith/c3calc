@@ -7,6 +7,7 @@ this program has pretty much the same syntax as any other textual calculator app
 - functions (`log10(100) * log2(128)` -> `14`) (note that these are pre-defined and can't be created)
 ---
 to evaluate more than one expression in the same context, either insert a newline, or use a semicolon `;`
+alternatively, run the program without any arguments and you'll enter the live interpreter, exiting by entering `:q`
 ## building
 there are no dependencies other than c3c. if you have c3c then you can paste this code into a terminal:
 ```bash
