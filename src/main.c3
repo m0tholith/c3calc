@@ -82,36 +82,42 @@ fn Interpreter interpreterInit()
     interpreter.add_function("sqrt", &sqrt);
     interpreter.add_function("cbrt", &cbrt);
 
+    interpreter.add_function("deg2rad", &deg2rad);
+    interpreter.add_function("rad2deg", &rad2deg);
+
     return interpreter;
 }
 
-fn double sin   (double x) { return math::sin(x); }
-fn double cos   (double x) { return math::cos(x); }
-fn double tan   (double x) { return math::tan(x); }
-fn double cotan (double x) { return math::cotan(x); }
-fn double sec   (double x) { return math::sec(x); }
-fn double cosec (double x) { return math::cosec(x); }
-fn double sinh  (double x) { return math::sinh(x); }
-fn double cosh  (double x) { return math::cosh(x); }
-fn double tanh  (double x) { return math::atan(x); }
-fn double cotanh(double x) { return math::cotanh(x); }
-fn double sech  (double x) { return math::sec(x); }
-fn double cosech(double x) { return math::cosech(x); }
+fn double sin    (double x) { return math::sin(x); }
+fn double cos    (double x) { return math::cos(x); }
+fn double tan    (double x) { return math::tan(x); }
+fn double cotan  (double x) { return math::cotan(x); }
+fn double sec    (double x) { return math::sec(x); }
+fn double cosec  (double x) { return math::cosec(x); }
+fn double sinh   (double x) { return math::sinh(x); }
+fn double cosh   (double x) { return math::cosh(x); }
+fn double tanh   (double x) { return math::atan(x); }
+fn double cotanh (double x) { return math::cotanh(x); }
+fn double sech   (double x) { return math::sec(x); }
+fn double cosech (double x) { return math::cosech(x); }
 
-fn double asin  (double x) { return math::asin(x); }
-fn double acos  (double x) { return math::acos(x); }
-fn double atan  (double x) { return math::atan(x); }
-fn double asinh (double x) { return math::asinh(x); }
-fn double acosh (double x) { return math::acosh(x); }
-fn double atanh (double x) { return math::atanh(x); }
+fn double asin   (double x) { return math::asin(x); }
+fn double acos   (double x) { return math::acos(x); }
+fn double atan   (double x) { return math::atan(x); }
+fn double asinh  (double x) { return math::asinh(x); }
+fn double acosh  (double x) { return math::acosh(x); }
+fn double atanh  (double x) { return math::atanh(x); }
 
-fn double floor (double x) { return math::floor(x); }
-fn double ceil  (double x) { return math::ceil(x); }
-fn double round (double x) { return math::round(x); }
+fn double floor  (double x) { return math::floor(x); }
+fn double ceil   (double x) { return math::ceil(x); }
+fn double round  (double x) { return math::round(x); }
 
-fn double ln    (double x) { return math::ln(x); }
-fn double log10 (double x) { return math::log10(x); }
-fn double log2  (double x) { return math::log2(x); }
+fn double ln     (double x) { return math::ln(x); }
+fn double log10  (double x) { return math::log10(x); }
+fn double log2   (double x) { return math::log2(x); }
 
-fn double sqrt  (double x) { return math::sqrt(x); }
-fn double cbrt  (double x) { return math::pow(x, 1.0 / 3.0); }
+fn double sqrt   (double x) { return math::sqrt(x); }
+fn double cbrt   (double x) { return math::pow(x, 1.0 / 3.0); }
+
+fn double deg2rad(double x) { return math::deg_to_rad(x); }
+fn double rad2deg(double x) { return x / math::PI * 180.0; }
