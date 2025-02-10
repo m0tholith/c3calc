@@ -8,9 +8,48 @@ import std::math;
 
 fn int main(String[] args)
 {
+    Interpreter interpreter = interpreterInit();
+    defer interpreter.free();
+
+    if (args.len == 1)
+    {
+        while (true)
+        {
+            String! expr = io::readline();
+            if (catch excuse = expr)
+            {
+                io::eprintfn("ERROR: %s", excuse);
+                return -1;
+            }
+            if (expr == ":q") return 0;
+            String! result = interpreter.execute(expr);
+            if (catch excuse = result)
+            {
+                io::eprintfn("ERROR: %s", excuse);
+                return -1;
+            }
+            io::printn(result);
+        }
+    }
+
+    foreach (arg : args[1 ..])
+	{
+        String! result = interpreter.execute(arg);
+        if (catch excuse = result)
+        {
+            io::eprintfn("ERROR: %s", excuse);
+            return -1;
+        }
+        io::printn(result);
+    }
+
+	return 0;
+}
+
+fn Interpreter interpreterInit()
+{
     Interpreter interpreter;
     interpreter.new_init();
-	defer interpreter.free();
 
     interpreter.add_function("sin", &sin);
     interpreter.add_function("cos", &cos);
@@ -43,15 +82,7 @@ fn int main(String[] args)
     interpreter.add_function("sqrt", &sqrt);
     interpreter.add_function("cbrt", &cbrt);
 
-	String! result = interpreter.execute(args[1]);
-    if (catch excuse = result)
-    {
-        io::eprintfn("ERROR: %s", excuse);
-		return -1;
-    }
-	io::printn(result);
-
-	return 0;
+    return interpreter;
 }
 
 fn double sin   (double x) { return math::sin(x); }
