@@ -69,7 +69,7 @@ fn double! Interpreter.evaluate(Interpreter* self, String calculation)
 <*
  Evaluate more than one calculation in the same string.
  *>
-fn String! Interpreter.execute(Interpreter* self, String calculation)
+fn String! Interpreter.execute(Interpreter* self, String calculation, bool only_get_last = false)
 {
     TokenList tokens = tokenizer::tokenize(calculation);
     defer tokens.free();
@@ -120,6 +120,7 @@ fn String! Interpreter.execute(Interpreter* self, String calculation)
 			}
 			defer expression.free();
 
+            if (only_get_last) result.clear();
 			result.appendfn("%s -> %f", expression.toString(), expression.evaluate(self)!);
 
 			start = end + 1;

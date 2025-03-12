@@ -4,6 +4,7 @@ import tokenizer;
 import parser;
 import interpreter;
 import std::io;
+import std::io::file;
 import std::math;
 
 fn int main(String[] args)
@@ -30,7 +31,19 @@ fn int main(String[] args)
     }
 
     foreach (arg : args[1 ..])
-	{
+    {
+        if (try contents = (String)file::load(allocator::temp(), arg))
+        {
+            if (contents.len == 0) continue;
+            String! result = interpreter.execute(contents, only_get_last: true);
+            if (catch excuse = result)
+            {
+                io::eprintfn("ERROR: %s", excuse);
+                continue;
+            }
+            io::printn(result);
+            continue;
+        }
         String! result = interpreter.execute(arg);
         if (catch excuse = result)
         {
