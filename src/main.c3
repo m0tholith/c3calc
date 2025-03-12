@@ -16,18 +16,14 @@ fn int main(String[] args)
         while (true)
         {
             String! expr = io::readline(mem);
-            if (catch excuse = expr)
-            {
-                io::eprintfn("ERROR: %s", excuse);
-                return -1;
-            }
+            if (catch excuse = expr) return 0;
             defer free(expr);
             if (expr == ":q") return 0;
             String! result = interpreter.execute(expr);
             if (catch excuse = result)
             {
                 io::eprintfn("ERROR: %s", excuse);
-                return -1;
+                continue;
             }
             io::printn(result);
         }
