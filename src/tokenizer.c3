@@ -45,7 +45,7 @@ fn bool Token.checkType(Token* token, TokenType type)
 fn String Token.toString(Token* token)
 {
     DString result;
-    result.new_init();
+    result.init(mem);
     defer result.free();
 
     result.append("{ \"");
@@ -60,7 +60,7 @@ fn String Token.toString(Token* token)
     return str;
 }
 
-def TokenList = List(<Token>);
+def TokenList = List{Token};
 
 <*
  @require tokens != null : "token list is null"
@@ -69,7 +69,7 @@ fn String TokenList.toString(TokenList* tokens)
 {
     DString result;
     defer result.free();
-    result.new_init();
+    result.init(mem);
 
     result.append("[ ");
     foreach (idx, &token : tokens)
@@ -86,10 +86,10 @@ fn String TokenList.toString(TokenList* tokens)
 <*
  @require expression.len != 0 : "expression is empty"
  *>
-fn List(<Token>) tokenize(String expression)
+fn List{Token} tokenize(String expression)
 {
-    List(<Token>) tokens;
-    tokens.new_init();
+    List{Token} tokens;
+    tokens.init(mem);
 
     int position = 0;
 
@@ -107,34 +107,34 @@ fn List(<Token>) tokenize(String expression)
 
             // single character
             case '(':
-                tokens.push(Token { "(", LEFT_PAREN, position } );
+                tokens.push({ "(", LEFT_PAREN, position } );
                 position++;
             case ')':
-                tokens.push(Token { ")", RIGHT_PAREN, position } );
+                tokens.push({ ")", RIGHT_PAREN, position } );
                 position++;
             case ',':
-                tokens.push(Token { ",", COMMA, position } );
+                tokens.push({ ",", COMMA, position } );
                 position++;
             case '.':
-                tokens.push(Token { ".", DOT, position } );
+                tokens.push({ ".", DOT, position } );
                 position++;
             case '-':
-                tokens.push(Token { "-", MINUS, position } );
+                tokens.push({ "-", MINUS, position } );
                 position++;
             case '+':
-                tokens.push(Token { "+", PLUS, position } );
+                tokens.push({ "+", PLUS, position } );
                 position++;
             case '/':
-                tokens.push(Token { "/", SLASH, position } );
+                tokens.push({ "/", SLASH, position } );
                 position++;
             case '*':
-                tokens.push(Token { "*", STAR, position } );
+                tokens.push({ "*", STAR, position } );
                 position++;
             case '^':
-                tokens.push(Token { "^", CARET, position } );
+                tokens.push({ "^", CARET, position } );
                 position++;
             case '=':
-                tokens.push(Token { "=", EQUAL, position } );
+                tokens.push({ "=", EQUAL, position } );
                 position++;
 
             // variables
@@ -152,7 +152,7 @@ fn List(<Token>) tokenize(String expression)
 
             case '\n':
             case ';':
-                tokens.push(Token { ";", EOF, position });
+                tokens.push({ ";", EOF, position });
                 position++;
 
             default:
@@ -195,7 +195,7 @@ fn List(<Token>) tokenize(String expression)
         }
     }
 
-	if (tokens[^1].type != EOF) tokens.push(Token { ";", EOF, (int)tokens.len() });
+	if (tokens[^1].type != EOF) tokens.push({ ";", EOF, (int)tokens.len() });
 
     return tokens;
 }

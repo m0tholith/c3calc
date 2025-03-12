@@ -160,7 +160,7 @@ fn Primary*! parsePrimary(TokenList tokens, int* currentPtr)
     Primary* primary = mem::new(Primary);
     if (try number = consume(tokens, currentPtr, NUMBER))
     {
-        primary.value = @clone(number.content.copy());
+        primary.value = @clone(number.content.copy(mem));
         return primary;
     }
     *currentPtr = prev;
@@ -207,7 +207,7 @@ struct Function (ParsingExpression)
 fn String Function.toString(Function* self) @dynamic
 {
     DString result;
-    result.new_init();
+    result.init(mem);
     defer result.free();
 
     if (*self.func == "" || self.primary.value.type == Grouping.typeid)
@@ -231,7 +231,7 @@ fn Function*! parseFunction(TokenList tokens, int* currentPtr)
     Function* function = mem::new(Function);
     if (try word = consume(tokens, currentPtr, WORD))
     {
-        function.func = @clone(word.content);
+        function.func = @clone(word.content.copy(mem));
     }
     else
     {
@@ -259,7 +259,7 @@ fn void Function.free(Function* self) @dynamic
 
 struct Exponent (ParsingExpression)
 {
-	List(<Function*>) valueList;
+	List{Function*} valueList;
 }
 <*
  @require self != null : "exponent is null"
@@ -269,7 +269,7 @@ fn String Exponent.toString(Exponent* self) @dynamic
 	if (self.valueList.len() == 1) return self.valueList[0].toString();
 
 	DString result;
-	result.new_init();
+	result.init(mem);
 	defer result.free();
 	result.append(self.valueList[0].toString());
 
@@ -289,7 +289,7 @@ fn Exponent*! parseExponent(TokenList tokens, int* currentPtr)
     int prev = *currentPtr;
     
 	Exponent* exponent = mem::new(Exponent);
-	exponent.valueList.new_init();
+	exponent.valueList.init(mem);
     Function*! functionL = parseFunction(tokens, currentPtr);
     if (catch excuse = functionL)
     {
@@ -340,7 +340,7 @@ struct Unary (ParsingExpression)
 fn String Unary.toString(Unary* self) @dynamic
 {
     DString result;
-    result.new_init();
+    result.init(mem);
     defer result.free();
     switch (self.operator)
     {
@@ -400,7 +400,7 @@ struct FactorRHS
 struct Factor (ParsingExpression)
 {
     Unary* left;
-    List(<FactorRHS>) right;
+    List{FactorRHS} right;
 }
 <*
  @require self != null : "factor is null"
@@ -408,7 +408,7 @@ struct Factor (ParsingExpression)
 fn String Factor.toString(Factor* self) @dynamic
 {
     DString result;
-    result.new_init();
+    result.init(mem);
     defer result.free();
     result.append(self.left.toString());
 
@@ -441,7 +441,7 @@ fn Factor*! parseFactor(TokenList tokens, int* currentPtr)
         mem::free(factor);
         return excuse?;
     }
-    factor.right.new_init();
+    factor.right.init(mem);
     factor.left = unaryL;
     int count;
     while (true)
@@ -501,7 +501,7 @@ struct TermRHS
 struct Term (ParsingExpression)
 {
     Factor* left;
-    List(<TermRHS>) right;
+    List{TermRHS} right;
 }
 <*
  @require self != null : "term is null"
@@ -513,7 +513,7 @@ fn String Term.toString(Term* self) @dynamic
         return self.left.toString();
     }
     DString result;
-    result.new_init();
+    result.init(mem);
     defer result.free();
     result.append(self.left.toString());
 
@@ -547,7 +547,7 @@ fn Term*! parseTerm(TokenList tokens, int* currentPtr)
         mem::free(term);
         return excuse?;
     }
-    term.right.new_init();
+    term.right.init(mem);
     term.left = factorL;
     int count;
     while (true)
@@ -604,7 +604,7 @@ struct Grouping (ParsingExpression)
 fn String Grouping.toString(Grouping* self) @dynamic
 {
     DString result;
-    result.new_init();
+    result.init(mem);
     defer result.free();
 
     result.append("(");
@@ -678,7 +678,7 @@ fn Variable*! parseVariable(TokenList tokens, int* currentPtr)
     if (try varName = consume(tokens, currentPtr, VARIABLE))
     {
         Variable* variable = mem::new(Variable);
-        variable.name = @clone(varName.content.copy());
+        variable.name = @clone(varName.content.copy(mem));
         return variable;
     }
     return ParsingError.VARIABLE_NO_VAR_NAME?;
@@ -705,7 +705,7 @@ struct Assignment (ParsingExpression)
 fn String Assignment.toString(Assignment* self) @dynamic
 {
     DString result;
-    result.new_init();
+    result.init(mem);
     defer result.free();
 
     result.appendf("%s = %s", self.variable.toString(), self.value.toString());

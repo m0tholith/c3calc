@@ -4,26 +4,34 @@ import tokenizer;
 import parser;
 import std::io;
 import std::math;
+import std::core::mem;
 import std::collections::map;
-
+import std::collections::tuple;
 
 def FunctionDefinition = fn double(double x);
-def FunctionTable = HashMap(<String, FunctionDefinition>);
-def VariableTable = HashMap(<String, double>);
+def FunctionTable = HashMap{String, FunctionDefinition};
+def VariableTable = HashMap{String, double};
 
 struct Interpreter
 {
     FunctionTable functions;
     VariableTable variables;
 }
-fn void Interpreter.new_init(Interpreter* self)
+fn void Interpreter.init(Interpreter* self)
 {
-    self.functions.new_init();
-    self.variables.new_init();
+    self.functions.init(mem);
+    self.variables.init(mem);
 }
 fn void Interpreter.add_function(Interpreter* self, String name, FunctionDefinition function)
 {
     self.functions.set(name, function);
+}
+fn void Interpreter.add_functions(Interpreter* self, Tuple{String, FunctionDefinition}[] functions)
+{
+    foreach (function : functions)
+    {
+        self.functions.set(function.first, function.second);
+    }
 }
 fn void Interpreter.add_variable(Interpreter* self, String name, double variable)
 {
@@ -74,7 +82,7 @@ fn String! Interpreter.execute(Interpreter* self, String calculation)
 	if (!has_eof)
 	{
 		DString result;
-		result.new_init();
+		result.init(mem);
 		defer result.free();
 
 		Expression*! expression = parser::parseExpression(tokens);
@@ -90,7 +98,7 @@ fn String! Interpreter.execute(Interpreter* self, String calculation)
 	}
 
 	DString result;
-	result.new_init();
+	result.init(mem);
 	defer result.free();
 	
 	int start = 0;
@@ -101,7 +109,7 @@ fn String! Interpreter.execute(Interpreter* self, String calculation)
 		{
 			Token[] tokenArr = tokens.to_tarray()[start .. end - 1];
 			TokenList evalTokens;
-			evalTokens.new_init();
+			evalTokens.init(mem);
 			defer evalTokens.free();
 			evalTokens.add_array(tokenArr);
 			

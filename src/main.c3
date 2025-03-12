@@ -15,12 +15,13 @@ fn int main(String[] args)
     {
         while (true)
         {
-            String! expr = io::readline();
+            String! expr = io::readline(mem);
             if (catch excuse = expr)
             {
                 io::eprintfn("ERROR: %s", excuse);
                 return -1;
             }
+            defer free(expr);
             if (expr == ":q") return 0;
             String! result = interpreter.execute(expr);
             if (catch excuse = result)
@@ -49,75 +50,43 @@ fn int main(String[] args)
 fn Interpreter interpreterInit()
 {
     Interpreter interpreter;
-    interpreter.new_init();
+    interpreter.init();
 
-    interpreter.add_function("sin", &sin);
-    interpreter.add_function("cos", &cos);
-    interpreter.add_function("tan", &tan);
-    interpreter.add_function("cotan", &cotan);
-    interpreter.add_function("sec", &sec);
-    interpreter.add_function("cosec", &cosec);
-    interpreter.add_function("sinh", &sinh);
-    interpreter.add_function("cosh", &cosh);
-    interpreter.add_function("tanh", &atan);
-    interpreter.add_function("cotanh", &cotanh);
-    interpreter.add_function("sech", &sec);
-    interpreter.add_function("cosech", &cosech);
+    interpreter.add_functions({
+        { "sin", fn (x) => math::sin(x) },
+        { "cos", fn (x) => math::cos(x) },
+        { "tan", fn (x) => math::tan(x) },
+        { "cotan", fn (x) => math::cotan(x) },
+        { "sec", fn (x) => math::sec(x) },
+        { "cosec", fn (x) => math::cosec(x) },
+        { "sinh", fn (x) => math::sinh(x) },
+        { "cosh", fn (x) => math::cosh(x) },
+        { "tanh", fn (x) => math::atan(x) },
+        { "cotanh", fn (x) => math::cotanh(x) },
+        { "sech", fn (x) => math::sec(x) },
+        { "cosech", fn (x) => math::cosech(x) },
 
-    interpreter.add_function("asin", &asin);
-    interpreter.add_function("acos", &acos);
-    interpreter.add_function("atan", &atan);
-    interpreter.add_function("asinh", &asinh);
-    interpreter.add_function("acosh", &acosh);
-    interpreter.add_function("atanh", &atanh);
+        { "asin", fn (x) => math::asin(x) },
+        { "acos", fn (x) => math::acos(x) },
+        { "atan", fn (x) => math::atan(x) },
+        { "asinh", fn (x) => math::asinh(x) },
+        { "acosh", fn (x) => math::acosh(x) },
+        { "atanh", fn (x) => math::atanh(x) },
 
-    interpreter.add_function("floor", &floor);
-    interpreter.add_function("ceil", &ceil);
-    interpreter.add_function("round", &round);
+        { "floor", fn (x) => math::floor(x) },
+        { "ceil", fn (x) => math::ceil(x) },
+        { "round", fn (x) => math::round(x) },
 
-    interpreter.add_function("ln", &ln);
-    interpreter.add_function("log10", &log10);
-    interpreter.add_function("log2", &log2);
+        { "ln", fn (x) => math::ln(x) },
+        { "log10", fn (x) => math::log10(x) },
+        { "log2", fn (x) => math::log2(x) },
 
-    interpreter.add_function("sqrt", &sqrt);
-    interpreter.add_function("cbrt", &cbrt);
+        { "sqrt", fn (x) => math::sqrt(x) },
+        { "cbrt", fn (x) => math::pow(x, 1.0 / 3.0) },
 
-    interpreter.add_function("deg2rad", &deg2rad);
-    interpreter.add_function("rad2deg", &rad2deg);
+        { "deg2rad", fn (x) => math::deg_to_rad(x) },
+        { "rad2deg", fn (x) => x / math::PI * 180.0 },
+    });
 
     return interpreter;
 }
-
-fn double sin    (double x) { return math::sin(x); }
-fn double cos    (double x) { return math::cos(x); }
-fn double tan    (double x) { return math::tan(x); }
-fn double cotan  (double x) { return math::cotan(x); }
-fn double sec    (double x) { return math::sec(x); }
-fn double cosec  (double x) { return math::cosec(x); }
-fn double sinh   (double x) { return math::sinh(x); }
-fn double cosh   (double x) { return math::cosh(x); }
-fn double tanh   (double x) { return math::atan(x); }
-fn double cotanh (double x) { return math::cotanh(x); }
-fn double sech   (double x) { return math::sec(x); }
-fn double cosech (double x) { return math::cosech(x); }
-
-fn double asin   (double x) { return math::asin(x); }
-fn double acos   (double x) { return math::acos(x); }
-fn double atan   (double x) { return math::atan(x); }
-fn double asinh  (double x) { return math::asinh(x); }
-fn double acosh  (double x) { return math::acosh(x); }
-fn double atanh  (double x) { return math::atanh(x); }
-
-fn double floor  (double x) { return math::floor(x); }
-fn double ceil   (double x) { return math::ceil(x); }
-fn double round  (double x) { return math::round(x); }
-
-fn double ln     (double x) { return math::ln(x); }
-fn double log10  (double x) { return math::log10(x); }
-fn double log2   (double x) { return math::log2(x); }
-
-fn double sqrt   (double x) { return math::sqrt(x); }
-fn double cbrt   (double x) { return math::pow(x, 1.0 / 3.0); }
-
-fn double deg2rad(double x) { return math::deg_to_rad(x); }
-fn double rad2deg(double x) { return x / math::PI * 180.0; }
