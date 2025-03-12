@@ -78,7 +78,7 @@ fn Expression*! parseExpression(TokenList tokens)
     int* current = mem::new(int);
     defer mem::free(current);
 
-    if (tokens[1].type == EQUAL)
+    if (tokens.len() > 1 && tokens[1].type == EQUAL)
     {
         Assignment*! assignment = parseAssignment(tokens, current);
         if (catch excuse = assignment)
