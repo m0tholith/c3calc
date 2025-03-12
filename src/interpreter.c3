@@ -92,7 +92,7 @@ fn String! Interpreter.execute(Interpreter* self, String calculation)
 		}
 		defer expression.free();
 		
-		result.appendf("%f", expression.evaluate(self));
+		result.appendf("%f", expression.evaluate(self)!);
 
 		return result.tcopy_str();
 	}
@@ -120,7 +120,7 @@ fn String! Interpreter.execute(Interpreter* self, String calculation)
 			}
 			defer expression.free();
 
-			result.appendfn("%s -> %f", expression.toString(), expression.evaluate(self));
+			result.appendfn("%s -> %f", expression.toString(), expression.evaluate(self)!);
 
 			start = end + 1;
 		}
@@ -134,15 +134,23 @@ fn void Interpreter.free(Interpreter* self)
     self.variables.free();
 }
 
+fault EvalError
+{
+	EXPRESSION_INVALID_TYPE,
+	PRIMARY_INVALID_TYPE,
+	FUNCTION_NOT_FOUND,
+	EXPONENT_EMPTY,
+	VARIABLE_NOT_FOUND,
+}
 interface ParsingExpression
 {
-    fn double evaluate(Interpreter* interpreter);
+    fn double! evaluate(Interpreter* interpreter);
 }
 
 <*
  @require self != null : "expression is null"
  *>
-fn double Expression.evaluate(Expression* self, Interpreter* interpreter) @dynamic
+fn double! Expression.evaluate(Expression* self, Interpreter* interpreter) @dynamic
 {
     switch (self.expr.type)
 	{
@@ -151,12 +159,12 @@ fn double Expression.evaluate(Expression* self, Interpreter* interpreter) @dynam
 		case Term.typeid:
 			return ((Term*)self.expr).evaluate(interpreter);
 	}
-	return 999.99999;
+	return EvalError.EXPRESSION_INVALID_TYPE?;
 }
 <*
  @require self != null : "primary is null"
  *>
-fn double Primary.evaluate(Primary* self, Interpreter* interpreter) @dynamic
+fn double! Primary.evaluate(Primary* self, Interpreter* interpreter) @dynamic
 {
     switch (self.value.type)
     {
@@ -167,36 +175,37 @@ fn double Primary.evaluate(Primary* self, Interpreter* interpreter) @dynamic
         case Variable.typeid:
             return ((Variable*)self.value).evaluate(interpreter);
     }
-    return 999.99999;
+    return EvalError.PRIMARY_INVALID_TYPE?;
 }
 <*
  @require self != null : "function is null"
  *>
-fn double Function.evaluate(Function* self, Interpreter* interpreter) @dynamic
+fn double! Function.evaluate(Function* self, Interpreter* interpreter) @dynamic
 {
-    double x = self.primary.evaluate(interpreter);
+    double x = self.primary.evaluate(interpreter)!;
     if (*self.func == "") return x;
     if (try function = interpreter.functions[*self.func]) return function(x);
-    return 999.99999;
+	io::eprintfn("couldn't find function %s", *self.func);
+    return EvalError.FUNCTION_NOT_FOUND?;
 }
 <*
  @require self != null : "exponent is null"
  *>
-fn double Exponent.evaluate(Exponent* self, Interpreter* interpreter) @dynamic
+fn double! Exponent.evaluate(Exponent* self, Interpreter* interpreter) @dynamic
 {
-	if (self.valueList.len() == 0) return 999.99999;
+	if (self.valueList.len() == 0) return EvalError.EXPONENT_EMPTY?;
 
-	double result = self.valueList[^1].evaluate(interpreter);
+	double result = self.valueList[^1].evaluate(interpreter)!;
 	for (int i = (int)self.valueList.len() - 1 - 1; i >= 0; i--)
 	{
-		result = math::pow(self.valueList[i].evaluate(interpreter), result);
+		result = math::pow(self.valueList[i].evaluate(interpreter)!, result);
 	}
 	return result;
 }
 <*
  @require self != null : "unary is null"
  *>
-fn double Unary.evaluate(Unary* self, Interpreter* interpreter) @dynamic
+fn double! Unary.evaluate(Unary* self, Interpreter* interpreter) @dynamic
 {
     switch (self.operator)
     {
@@ -209,13 +218,13 @@ fn double Unary.evaluate(Unary* self, Interpreter* interpreter) @dynamic
 <*
  @require self != null : "factor is null"
  *>
-fn double Factor.evaluate(Factor* self, Interpreter* interpreter) @dynamic
+fn double! Factor.evaluate(Factor* self, Interpreter* interpreter) @dynamic
 {
-    double result = self.left.evaluate(interpreter);
+    double result = self.left.evaluate(interpreter)!;
     double unaryEval;
     foreach (idx, unaryRHS : self.right)
     {
-        unaryEval = unaryRHS.right.evaluate(interpreter);
+        unaryEval = unaryRHS.right.evaluate(interpreter)!;
         switch (unaryRHS.operator)
         {
             case MUL:
@@ -229,9 +238,9 @@ fn double Factor.evaluate(Factor* self, Interpreter* interpreter) @dynamic
 <*
  @require self != null : "term is null"
  *>
-fn double Term.evaluate(Term* self, Interpreter* interpreter) @dynamic
+fn double! Term.evaluate(Term* self, Interpreter* interpreter) @dynamic
 {
-    double result = self.left.evaluate(interpreter);
+    double result = self.left.evaluate(interpreter)!;
     double factorEval;
     foreach (idx, factorRHS : self.right)
     {
@@ -242,7 +251,7 @@ fn double Term.evaluate(Term* self, Interpreter* interpreter) @dynamic
             case SUB:
                 factorEval = -1;
         }
-        factorEval *= factorRHS.right.evaluate(interpreter);
+        factorEval *= factorRHS.right.evaluate(interpreter)!;
         result += factorEval;
     }
     return result;
@@ -250,25 +259,25 @@ fn double Term.evaluate(Term* self, Interpreter* interpreter) @dynamic
 <*
  @require self != null : "grouping is null"
  *>
-fn double Grouping.evaluate(Grouping* self, Interpreter* interpreter) @dynamic
+fn double! Grouping.evaluate(Grouping* self, Interpreter* interpreter) @dynamic
 {
     return self.expr.evaluate(interpreter);
 }
 <*
  @require self != null : "variable is null"
  *>
-fn double Variable.evaluate(Variable* self, Interpreter* interpreter) @dynamic
+fn double! Variable.evaluate(Variable* self, Interpreter* interpreter) @dynamic
 {
     if (try variable = interpreter.variables[*self.name]) return variable;
-	io::eprintfn("couldnt find variable %s", *self.name);
-    return 999.99999;
+	io::eprintfn("couldn't find variable %s", *self.name);
+    return EvalError.VARIABLE_NOT_FOUND?;
 }
 <*
  @require self != null : "assignment is null"
  *>
-fn double Assignment.evaluate(Assignment* self, Interpreter* interpreter)
+fn double! Assignment.evaluate(Assignment* self, Interpreter* interpreter)
 {
-	double valueNumber = self.value.evaluate(interpreter);
+	double valueNumber = self.value.evaluate(interpreter)!;
 	interpreter.add_variable(*self.variable.name, valueNumber);
 	return valueNumber;
 }
